@@ -67,7 +67,7 @@ SIM.alpha     = 2;
 SIM.testcase = 2;
 
 %% algorithm selection for P2P, P2M, and RHS evaluations
-SIM.numProc     = 1;        % number of CPU cores to use for parallel algorithms
+SIM.numProc     = 12;        % number of CPU cores to use for parallel algorithms
 SIM.runMode_P2P = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2', 'CPU-v3', 'GPU-v1', 'GPU-v2'
 SIM.runMode_RHS = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2', 'CPU-v3', 'GPU-v1', 'GPU-v2'
 SIM.runMode_P2M = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2',           'GPU-v1', 'GPU-v2'

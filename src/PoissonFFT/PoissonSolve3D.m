@@ -39,8 +39,8 @@ end
 %----------------------------------------------------------------------
 vort_ext = cell(1, 3);
 vort_fft = cell(1, 3);
-% for i = 1:3
-parfor i = 1:3    
+for i = 1:3
+% parfor i = 1:3    
     % the extended vorticity field
     vort_ext{i}                                         = zeros(2*Mesh.NX(1), 2*Mesh.NX(2), 2*Mesh.NX(3));
     vort_ext{i}(1:Mesh.NX(1),1:Mesh.NX(2),1:Mesh.NX(3)) = vort{i};
