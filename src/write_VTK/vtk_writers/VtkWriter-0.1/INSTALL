@@ -1,0 +1,13 @@
+VtkWriter Installation Instructions.
+
+This has been created and tested in Matlab R2011a. This package uses Matlab classes and each class is a subclass of the handle class. It's not clear from the documentation on the Mathworks website which older releases support classes (and/or the handle class).
+
+Installation:
+
+Make sure the folder is on the Matlab PATH.
+
+You can then get further information with:
+
+doc VtkWriter
+
+This package is an AS IS deal. I'm still in the process of developing this. I've already found it useful so getting up early seemd a good idea. I haven't set up a way of reporting bugs.

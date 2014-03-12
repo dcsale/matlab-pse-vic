@@ -1,0 +1,129 @@
+%=========================================================================%
+% This code simulates the 3D Navier-Stokes equations using a particle 
+% strength exchange (PSE) method,  see reference [1] to describe governing
+% equations of PSE.  This prototype code is also used to:
+%
+%	1) develop and benchmark algorithms using multicore CPUs and GPUs
+%	2) develop routines for pre- and post-processing of particle/mesh data 
+%   3) run on cloud based computing platforms (e.g. Amazon-EC2)
+%
+% License: BSD
+%
+% Danny Sale
+% University of Washington
+% 2013
+%=========================================================================%
+
+Some ideas for improvement...
+
+%=========================================================================%
+% NUMERICAL ANALYSIS, CODING, and DEBUGGING ISSUES
+(*) include higher order (and low storage) integration schemes for ODEs
+    (*) see Matlab ode45, ode23, and ode113
+
+(*) refactor the PSE routines so that we can call different smoothing kernels (e.g. 2nd, 4th, ... order accuracy kernels)
+    (*) refactor induce_vel_gpu_v1 to accept different kernels...see [2] for formulas
+
+(*) improve method for setting initial condition of vorticity field (i.e. make sure it is physically correct)
+    (*) add relaxation methods to initial field to satisfy divergence critieria? (see Kosior 2012 and Cottet 2000?)
+
+(*) add variable grid size that follows only the support of the vortiticity (e.g. Poisson solver tracks the vorticity support and grows/shrinks accordingly)
+    (*) have the mesh resolution increase/decrease to satisfy a constraint on the minimum length scale (a user parameter)
+
+(*) add conditions for when particles enter/leave domain (inlets/outlets)
+
+(*) in the main loops over the particles, combine the PSE and velocity contributions into a single loop
+
+
+
+%=========================================================================%
+% USABILITY
+(*) seperate the user parameters into a separate input file
+    (*) add batch processing
+
+(*) add ability to pause/continue simulations.  Add ability to import initial field from VTK file (or other?) to continue where simulation left off.
+
+(*) output to console runtime performance info in realtime (how to measure this in Matlab?)
+    (*) estimate the total memory footprint and runtime, notify the user before in case of bogus input values
+
+(*) output a diagnostics file, containing user definable outputs:
+        (*) min, max (and other useful stats over all times) of particle and field variables: xp, ap, wp, uf, wf
+        
+(*) send an email when the job is finished
+    (*) I saw something on the Matlab File Exchange board a while ago...
+
+
+%=========================================================================%
+% TURBINE / WING SIMULATIONS
+(*) add lifting lines.  
+    (*) add computation of velocity at single points (accelerated Biot-Savart law, only sum interactions from particles within cutoff distance)    
+    (*) From HARP_Opt and Co-Blade codebase, add functions to lookup airfoil coefficients and deal w/ blade geometry setup
+    (*) Enable the lifting lines to rotate and translate (6-DOF)
+    (*) add a simple dynamics model for the turbine drive shaft (instead of prescribing the rotational velocity, compute it!) 
+    (*) add 3D stall delay model from ref [3].  This method applies a correction to the 2D airfoil data, accounting for 3D (steady) effects. 
+    (*) add Dynamic Stall model (Beddoesâ€“Leishman?), this is an unsteady correction to the 2D airfoil data
+
+
+%=========================================================================%
+% GOVERNING EQUATIONS
+(*) add additional boundary conditions
+    (*) periodic
+    (*) inlet/outlet
+    (*) no through wall B.C. (inviscid)
+    (*) no slip wall B.C. (viscid)
+
+(*) add Helmholtz decomposition to include free stream velocity field
+
+(*) add spatially varying cores to the Particle Strength Exchange method (see formulation in Cottet section 5.4.3)
+
+(*) add option to use Poisson solver to get the velocity field (precursor to VIC code)
+    (*) modify 3D Poisson solver from Mads Hejlesen (from Technical University of Denmark).  Rewrite as function and add GPU acceleration.
+
+(*) extend to multiphase flows with Maxey-Riley equations (also see ref [3]). Just need gravity and drag forces for now.
+    (*) enable 1-way coupling (easier), or ..
+    (*) enable 2-way coupling (requires full Vortex-in-Cell method w/ Poisson solver)
+
+(*) for subgrid scale modeling, see the "method of local corrections" by [4,5], according to [2] this is an equivalent altenative to the Particle-Particle-Particle Mesh (P3M) method.
+
+
+
+%=========================================================================%
+% Outputs for VisIt / Paraview:
+(*) fix bug with VTK file output (w/ Matlab MEX capability, maybe use VTK writers from PPM Library or Deal.II)
+    (*) VisIt can only see vector magnitude and not individual components
+    (*) Paraview can only see the mesh data
+    (*) time values are not read correctly by VisIt or Paraview?
+
+(*) add the H5part format for particle data: http://www-vis.lbl.gov/Research/AcceleratorSAPP/
+
+(*) add derived expressions in VisIt
+    (*) divergence of velocity and vorticity field (should be = 0 at all times, but helpful to visualize for debugging)
+    (*) pressure field
+
+(*) is it possible to visualize output in Vrui? http://idav.ucdavis.edu/~okreylos/ResDev/Vrui/
+    (*) steroscopic output
+
+
+
+%=========================================================================%
+% DOCUMENTATION
+(*) type up the governing equations in LaTeX and add to the comments in the code
+
+(*) use Doxygen for Matlab 
+
+(*) add unit tests
+    (*) in Matlab 2013b: http://www.mathworks.com/help/matlab/matlab-unit-test-framework.html
+    
+    
+    
+%=========================================================================%
+% REFERENCES
+[1] G.S. Winckelmans (1993) Contributions to Vortex Particle Methods for the Computation of 3D Incompressible Unsteady Flows
+
+[2] Georges-Henri Cottet and Petros D. Koumoutsakos (2000) Vortex Methods: Theory and Practice
+
+[3] H. Dumitrescu, F. Frunzulica, and V. Cardos (2013) Improved Stall-Delay Model for Horizontal-Axis Wind Turbines
+
+[4] C. Anderson (1986) A Method of Local Corrections for Computing the Velocity Field Due to a Distribution of Vortex Blobs
+
+[5] P. McCorquodale (2007) A Local Corrections Algorithm for Solving Poisson’s Equation in Three Dimensions

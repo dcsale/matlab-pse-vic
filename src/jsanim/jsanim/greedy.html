@@ -1,0 +1,206 @@
+<html>
+<head>
+<title>jsanim</title>
+
+<script LANGUAGE="JavaScript" type="text/javascript">
+<!-- Javascript generated automatically in Matlab by jsanim.m, 2013-10-05 15:39:36 -->
+var currImageNum = null;
+var numFrames = null;
+var numImages = 10;
+var iImage = 0;
+var firstImageIsBackground = 0;
+var firstFrameImageNum = null;
+var timeout = null;
+var loopPauseMs = 0;
+var loopPauseInt = 2;
+var frameOffset = null;
+var currFrameNum = 1;
+var frameDelayMs = 250;
+var showStartStopCtrl = 1;
+var showFrameDelayCtrl = 1;
+var showLoopCtrl = 1;
+var showCounterTxt = 1;
+if (firstImageIsBackground==1) {
+  // The first (zeroth) image is to be used as a background, so the
+  // image for the first frame is image 1.
+  firstFrameImageNum = 1;
+  numFrames = numImages - 1;
+  frameOffset = 0;
+}
+else {
+  // The first image is a frame like all the other images, so the 
+  // image for the first frame is the zeroth image.
+  firstFrameImageNum = 0;
+  numFrames = numImages;
+  frameOffset = 1;
+}
+
+currImageNum = firstFrameImageNum;
+
+function imageLoad() {
+  document.images[0].src = "m01.png";
+  document.images[1].src = "m02.png";
+  document.images[2].src = "m03.png";
+  document.images[3].src = "m04.png";
+  document.images[4].src = "m05.png";
+  document.images[5].src = "m06.png";
+  document.images[6].src = "m07.png";
+  document.images[7].src = "m08.png";
+  document.images[8].src = "m09.png";
+  document.images[9].src = "m10.png";
+
+  // Make only the first frame and the background (if it exists)
+  // visible.
+  for(iImage = 0; iImage < numImages; iImage++) {
+    if (iImage <= firstFrameImageNum){
+      document.getElementById("frame" + iImage).style.visibility = "visible";
+    }
+    else {
+      document.getElementById("frame" + iImage).style.visibility = "hidden";
+    }
+  }
+  if (showCounterTxt == 1) document.getElementById("counterText").innerHTML = currFrameNum + " of " + numFrames;
+  if (showFrameDelayCtrl == 0) document.animForm.frameRateCtrl.style.visibility = "hidden";
+  if (showLoopCtrl == 0) document.animForm.loopCtrl.style.visibility = "hidden";
+  if (showStartStopCtrl == 0) {
+    document.animForm.startStopButton.style.visibility = "hidden";
+    next();
+  }
+}
+
+function next() {
+  currImageNum = currImageNum + 1;
+  refreshView();
+
+  if (currImageNum<numImages-1){
+    // Not last image. Go to next image after selected frame delay.
+    if (showFrameDelayCtrl == 1) {
+      ind = document.animForm.frameRateCtrl.selectedIndex;
+      frameDelayMs = document.animForm.frameRateCtrl.options[ind].value;
+    }
+    timeout = setTimeout("next()", frameDelayMs);
+  }
+  else {
+    // Last image reached. Behaviour depends on loop control setting.
+    if (showLoopCtrl == 1) {
+      ind = document.animForm.loopCtrl.selectedIndex;
+      loopPauseInt = document.animForm.loopCtrl.options[ind].value;
+    }
+    currImageNum=firstFrameImageNum - 1;
+    if (loopPauseInt==0){
+      // Zero loop pause means no looping.
+      document.animForm.startStopButton.value = "Start";
+    }
+    else {
+      loopPauseMs = loopPauseInt*frameDelayMs;
+      timeout = setTimeout("next()", loopPauseMs);  
+    }
+  }
+
+} // end next()
+
+function refreshView() {
+  // Cycle through images (all except the background), setting invisible
+  // if not the current frame.
+  for(iImage = firstFrameImageNum; iImage < numImages; iImage++) {
+    if (iImage == currImageNum){
+      document.getElementById("frame" + iImage).style.visibility = "visible";
+    }
+    else {
+      document.getElementById("frame" + iImage).style.visibility = "hidden";
+    }
+  }
+  currFrameNum = currImageNum + frameOffset;
+  if (showCounterTxt == 1) document.getElementById("counterText").innerHTML = currFrameNum + " of " + numFrames;
+}
+
+function startStopButtonCheck() {
+    if(document.animForm.startStopButton.value == "Start") {
+        document.animForm.startStopButton.value = "Stop";
+        next();
+    } else {
+        document.animForm.startStopButton.value = "Start";
+        clearTimeout(timeout);
+        timeout = null;
+    }
+}
+
+function loopCtrlCheck() {
+  clearTimeout(timeout);
+  timeout = null;
+  // Immediately resume running if already running. New pause
+  // value will take effect after this iteration.
+  if(document.animForm.startStopButton.value == "Stop") {
+    if (showFrameDelayCtrl == 1) {
+      ind = document.animForm.frameRateCtrl.selectedIndex;
+      frameDelayMs = document.animForm.frameRateCtrl.options[ind].value;
+    }
+    timeout = setTimeout("next()", frameDelayMs);
+  }
+}
+
+function frameRateCheck() {
+  clearTimeout(timeout);
+  timeout = null;
+
+  if(showStartStopCtrl == 0 || document.animForm.startStopButton.value == "Stop") {
+    if (showFrameDelayCtrl == 1) {
+      ind = document.animForm.frameRateCtrl.selectedIndex;
+      frameDelayMs = document.animForm.frameRateCtrl.options[ind].value;
+    }
+    timeout = setTimeout("next()", frameDelayMs);
+  }
+}
+
+</script>
+</head>
+
+<body onLoad="imageLoad();">
+
+<!-- HTML code generated automatically in Matlab by jsanim.m, 2013-10-05 15:39:36 -->
+<div ID="container" STYLE="width:1000">
+<div ID="frame0" STYLE="position:absolute; left:100; top:0; visibility:visible"><img src="m01.png" height=560  alt="" border="1"></div>
+<div ID="frame1" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m02.png" height=560  alt="" border="1"></div>
+<div ID="frame2" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m03.png" height=560  alt="" border="1"></div>
+<div ID="frame3" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m04.png" height=560  alt="" border="1"></div>
+<div ID="frame4" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m05.png" height=560  alt="" border="1"></div>
+<div ID="frame5" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m06.png" height=560  alt="" border="1"></div>
+<div ID="frame6" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m07.png" height=560  alt="" border="1"></div>
+<div ID="frame7" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m08.png" height=560  alt="" border="1"></div>
+<div ID="frame8" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m09.png" height=560  alt="" border="1"></div>
+<div ID="frame9" STYLE="position:absolute; left:100; top:0; visibility:hidden"><img src="m10.png" height=560  alt="" border="1"></div>
+<div ID="controls" STYLE="position:absolute; left:100; top:572">
+  <FORM NAME="animForm">
+    <INPUT TYPE="button" VALUE="Start" NAME="startStopButton" onClick=startStopButtonCheck() STYLE="height:40px; width:100px; vertical-align:top; font-size:12pt;">
+    <SELECT NAME="frameRateCtrl" onClick=frameRateCheck() STYLE="height:40px; vertical-align:top; font-size:12pt;">
+      <OPTION VALUE=100>0.1-second frame delay
+      <OPTION VALUE=250 SELECTED>0.25-second frame delay
+      <OPTION VALUE=500>0.5-second frame delay
+      <OPTION VALUE=1000>1-second frame delay
+      <OPTION VALUE=2000>2-second frame delay
+      <OPTION VALUE=3000>3-second frame delay
+    </SELECT>
+    <SELECT NAME="loopCtrl" onClick=loopCtrlCheck() STYLE="height:40px; vertical-align:top; font-size:12pt;">
+      <OPTION VALUE=0>No looping
+      <OPTION VALUE=1>1-frame loop pause
+      <OPTION VALUE=2 SELECTED>2-frame loop pause
+      <OPTION VALUE=3>3-frame loop pause
+      <OPTION VALUE=4>4-frame loop pause
+      <OPTION VALUE=5>5-frame loop pause
+      <OPTION VALUE=6>6-frame loop pause
+      <OPTION VALUE=7>7-frame loop pause
+      <OPTION VALUE=8>8-frame loop pause
+      <OPTION VALUE=9>9-frame loop pause
+      <OPTION VALUE=10>10-frame loop pause
+      <OPTION VALUE=15>15-frame loop pause
+      <OPTION VALUE=20>20-frame loop pause
+    </SELECT>
+    <b id="counterText" STYLE="padding-left:2pt"></b>
+  </FORM>
+</div>
+
+<div ID="reset-to-static-position" STYLE="position:static; margin-top:624px"></div>
+
+
+</body>
+</html>

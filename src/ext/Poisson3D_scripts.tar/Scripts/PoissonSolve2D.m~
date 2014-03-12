@@ -1,0 +1,285 @@
+clear all;  clc;
+% close all;
+
+kernel       = 12; % regularisation of integral kernel: 0,2,4,...,12  (-1 = 1/k^2)
+velocity     = 1; % 0 = psi by G kernel, 1 = u by K kernels, 2 = u by G kernel + spectral differentiating
+alpha        = 2; % sigma/dx
+
+% Testcases
+% 1 = Perlman vortex patch
+% 2 = Bump function
+testcase = 1;
+
+xmin = [0 0]; xmax = [2 2]; % Domain range
+
+NXs = 16*2.^(0:5); % Number of grid points
+
+L = xmax-xmin;
+for N = 1:length(NXs)
+    NX = NXs(N)
+    NY = round(L(2)/L(1)*NX);
+    %----------------------------------------------------------------------
+    % Setup domain (2 is extended and shifted space, c is offset to centre of vortex blob)
+    %----------------------------------------------------------------------
+    x = linspace(xmin(1),xmax(1),NX);
+    dx = x(2)-x(1);
+    x2 = x - xmin(1); x2 = [x2 -x2(end)-dx -x2(end:-1:2)];
+    
+    y = linspace(xmin(2),xmax(2),NY);
+    dy = y(2)-y(1);
+    y2 = y - xmin(2); y2 = [y2 -y2(end)-dy -y2(end:-1:2)];
+    
+    [fieldx fieldy] = ndgrid(x,y);
+    [fieldx2 fieldy2] = ndgrid(x2,y2);
+    
+    centre = (xmin+xmax)/2;
+    fieldxc = fieldx - centre(1);
+    fieldyc = fieldy - centre(2);
+    fieldrc = sqrt(fieldxc.^2 + fieldyc.^2);
+    
+    fieldr2 = sqrt(fieldx2.^2 + fieldy2.^2);
+    
+    % Wavenumbers
+    ks = 1/dx;
+    kx2 = 2*pi*linspace(-ks/2,ks/2,2*NX+1);
+    kx2 = fftshift(kx2(1:end-1));
+    
+    ks = 1/dy;
+    ky2 = 2*pi*linspace(-ks/2,ks/2,2*NY+1);
+    ky2 = fftshift(ky2(1:end-1));
+    
+    [fieldkx fieldky] = ndgrid(kx2,ky2);
+    
+    %----------------------------------------------------------------------
+    % Vorticity distribution
+    %----------------------------------------------------------------------
+    W = zeros(size(fieldx));
+    if(testcase == 1)
+        % Perlman
+        W(fieldrc <= 1) = (1-fieldrc(fieldrc <= 1).^2).^7;
+        W(fieldrc > 1)  = 0;
+    elseif(testcase == 2)
+        % Bump function
+        c = 20;
+        W(fieldrc < 1) = -4*c*exp(-c./(1-fieldxc(fieldrc < 1).^2 - fieldyc(fieldrc < 1).^2)).*...
+            (c*fieldxc(fieldrc < 1).^2 + fieldxc(fieldrc < 1).^4 + 2*fieldxc(fieldrc < 1).^2.*fieldyc(fieldrc < 1).^2 + c*fieldyc(fieldrc < 1).^2 + fieldyc(fieldrc < 1).^4 - 1).* ...
+            (-1 + fieldxc(fieldrc < 1).^2 + fieldyc(fieldrc < 1).^2).^(-4);
+        W(fieldrc >= 1)  = 0;
+    else
+        error('testcase unknown')
+    end
+    %----------------------------------------------------------------------
+    % Analytic solution
+    %----------------------------------------------------------------------
+    if(velocity)
+        uana = zeros(size(fieldx));
+        vana = zeros(size(fieldx));
+        
+        if(testcase == 1)
+            % Perlman
+            uana = -(1-(1-fieldrc.^2).^8)./(16*fieldrc.^2).* fieldyc .* (fieldrc <= 1) ...
+                - 1./(16*fieldrc.^2).*fieldyc .* (fieldrc > 1);
+            vana = (1-(1-fieldrc.^2).^8)./(16*fieldrc.^2).*fieldxc .* (fieldrc <= 1) ...
+                + 1./(16*fieldrc.^2).*fieldxc .* (fieldrc > 1);
+        elseif(testcase == 2)
+            % Bump function
+            uana(fieldrc < 1) = -2*c*fieldyc(fieldrc < 1).*exp(-c./(1 - fieldxc(fieldrc < 1).^2 - fieldyc(fieldrc < 1).^2)) ...
+                ./(1 - fieldxc(fieldrc < 1).^2 - fieldyc(fieldrc < 1).^2).^2;
+            vana(fieldrc < 1) = 2*c*fieldxc(fieldrc < 1).*exp(-c./(1 - fieldxc(fieldrc < 1).^2 - fieldyc(fieldrc < 1).^2)) ...
+                ./(1 - fieldxc(fieldrc < 1).^2 - fieldyc(fieldrc < 1).^2).^2;
+        end
+        
+        % velocity magnitude
+        umagana = sqrt(uana.^2 + vana.^2);
+    else
+        Psiana = zeros(size(fieldx));
+        if(testcase == 2)
+            % Bump function
+            Psiana(fieldrc < 1) = exp(-c./(1 - fieldxc(fieldrc < 1).^2 - fieldyc(fieldrc < 1).^2));
+        else
+            error('There exists no stream function for the specified testcase')
+        end
+    end
+    
+    clear fieldrc fieldxc fieldyc
+    
+%##########################################################################
+% THE SOLVER
+%##########################################################################
+    %----------------------------------------------------------------------
+    % Fourier transform vorticity field
+    %----------------------------------------------------------------------
+    W2 = zeros(2*NX,2*NY);
+    W2(1:NX,1:NY) = W;
+    What = fft2(W2);
+    
+    clear W2
+    %----------------------------------------------------------------------
+    % Integration kernel
+    %----------------------------------------------------------------------
+    if(kernel == -1)
+        if(velocity == 1)
+            error('No velocity kernel -- choose velocity = 2')
+        else
+            fieldkk = (sqrt(-1)*fieldkx).^2 + (sqrt(-1)*fieldky).^2;
+            Ghat = -1./fieldkk;
+            Ghat(fieldkk == 0) = 0;
+        end
+    else
+        sigma = alpha*dx;
+        rho = fieldr2/sigma;
+        gamma = 0.5772156649;
+        if(kernel == 0) % 0th order (No regularisation)
+            if(velocity == 1)
+                Ku = -1./(2*pi*fieldr2.^2).*fieldy2;
+                Ku(1,1) = 0;
+                Kv =  1./(2*pi*fieldr2.^2).*fieldx2;
+                Kv(1,1) = 0;
+            else
+                G = -1/(2*pi)*log(fieldr2);
+                G(1,1) = 1;
+            end
+        elseif(kernel == 2) % 2nd order
+            if(velocity == 1)
+                Ku = -1./(2*pi*fieldr2.^2).*fieldy2.*(1 - exp(-rho.^2/2));
+                Ku(1,1) = 0;
+                Kv = 1./(2*pi*fieldr2.^2) .*fieldx2.*(1 - exp(-rho.^2/2));
+                Kv(1,1) = 0;
+            else
+                G = -(log(fieldr2) + 1/2*expint(rho.^2/2))/(2*pi);
+                G(1,1) = (gamma/2-log(sqrt(2)*sigma))/(2*pi);
+            end
+        elseif(kernel == 4) % 4th order
+            if(velocity == 1)
+                Ku = -1./(2*pi*fieldr2.^2).*fieldy2.*(1 - (1 - rho.^2/2).*exp(-rho.^2/2));
+                Ku(1,1) = 0;
+                Kv = 1./(2*pi*fieldr2.^2) .*fieldx2.*(1 - (1 - rho.^2/2).*exp(-rho.^2/2));
+                Kv(1,1) = 0;
+            else
+                G = -(log(fieldr2) + 1/2*expint(rho.^2/2) - 1/2.*exp(-rho.^2/2))/(2*pi);
+                G(1,1) = (gamma/2 - log(sqrt(2)*sigma) + 1/2)/(2*pi);
+            end
+        elseif(kernel == 6)% 6th order
+            if(velocity == 1)
+                Ku = -1./(2*pi*fieldr2.^2).*fieldy2.*(1 - (1 - rho.^2 + 1/8*rho.^4).*exp(-rho.^2/2));
+                Ku(1,1) = 0;
+                Kv = 1./(2*pi*fieldr2.^2) .*fieldx2.*(1 - (1 - rho.^2 + 1/8*rho.^4).*exp(-rho.^2/2));
+                Kv(1,1) = 0;
+            else
+                G = -(log(fieldr2) + 0.5*expint(rho.^2/2) - (3/4 - 1/8*rho.^2).*exp(-rho.^2/2))/(2*pi);
+                G(1,1) = (gamma/2-log(sqrt(2)*sigma) + 3/4)/(2*pi);
+            end
+        elseif(kernel == 8) % 8th order
+            if(velocity == 1)
+                Ku = -1./(2*pi*fieldr2.^2).*fieldy2.*(1 - (1 - 3/2*rho.^2 + 3/8*rho.^4 - 1/48*rho.^6).*exp(-rho.^2/2));
+                Ku(1,1) = 0;
+                Kv = 1./(2*pi*fieldr2.^2) .*fieldx2.*(1 - (1 - 3/2*rho.^2 + 3/8*rho.^4 - 1/48*rho.^6).*exp(-rho.^2/2));
+                Kv(1,1) = 0;
+            else
+                G = -(log(fieldr2) + 0.5*expint(rho.^2/2) - (11/12 - 7/24*rho.^2 + 1/48*rho.^4).*exp(-rho.^2/2))/(2*pi);
+                G(1,1) = (gamma/2-log(sqrt(2)*sigma) + 11/12)/(2*pi);
+            end
+        elseif(kernel == 10) % 10th order
+            if(velocity == 1)
+                Ku = -1./(2*pi*fieldr2.^2).*fieldy2.*(1 - (1 - 2*rho.^2 + 3/4*rho.^4 - 1/12*rho.^6 + 1/384*rho.^8).*exp(-rho.^2/2));
+                Ku(1,1) = 0;
+                Kv = 1./(2*pi*fieldr2.^2) .*fieldx2.*(1 - (1 - 2*rho.^2 + 3/4*rho.^4 - 1/12*rho.^6 + 1/384*rho.^8).*exp(-rho.^2/2));
+                Kv(1,1) = 0;
+            else
+                G = -(log(fieldr2) + 0.5*expint(rho.^2/2) - (25/24 - 23/48*rho.^2 + 13/192*rho.^4 - 1/384*rho.^6).*exp(-rho.^2/2))/(2*pi);
+                G(1,1) = (gamma/2-log(sqrt(2)*sigma) + 25/24)/(2*pi);
+            end
+        elseif(kernel == 12) % 12th order
+            if(velocity == 1)
+                Ku = -1./(2*pi*fieldr2.^2).*fieldy2.*(1 - (1 - 5/2*rho.^2 + 5/4*rho.^4 - 5/24*rho.^6 + 5/384*rho.^8 - 1/3840*rho.^10).*exp(-rho.^2/2));
+                Ku(1,1) = 0;
+                Kv = 1./(2*pi*fieldr2.^2) .*fieldx2.*(1 - (1 - 5/2*rho.^2 + 5/4*rho.^4 - 5/24*rho.^6 + 5/384*rho.^8 - 1/3840*rho.^10).*exp(-rho.^2/2));
+                Kv(1,1) = 0;
+            else
+                G = -(log(fieldr2) + 0.5*expint(rho.^2/2) - (137/120 - 163/240*rho.^2 + 137/960*rho.^4 - 7/640*rho.^6 + 1/3840*rho.^8).*exp(-rho.^2/2))/(2*pi);
+                G(1,1) = (gamma/2-log(sqrt(2)*sigma) + 137/120)/(2*pi);
+            end
+        else
+            error('Specified kernel is not implemented')
+        end
+        % Fourier transform integration kernel
+        if(velocity == 1)
+            Kuhat = fft2(Ku*dx*dy);
+            Kvhat = fft2(Kv*dx*dy);
+        else
+            Ghat = fft2(G*dx*dy);
+        end
+    end
+    
+    clear Ku Kv G rho
+    %----------------------------------------------------------------------
+    % Do convolution
+    %----------------------------------------------------------------------
+    if(velocity == 1)
+        Uhat = What.*Kuhat;
+        Vhat = What.*Kvhat;
+    else
+        Psihat = What.*Ghat;
+        if(velocity == 2)
+            Uhat = Psihat.*(sqrt(-1)*fieldky);
+            Vhat = -Psihat.*(sqrt(-1)*fieldkx);
+        end
+    end
+    
+    clear What Kuhat Kvhat Ghat fieldk1 fieldk2
+    %----------------------------------------------------------------------
+    % Transform to physical space
+    %----------------------------------------------------------------------
+    if(velocity)
+        U2 = real(ifft2(Uhat));
+        V2 = real(ifft2(Vhat));
+    else
+        Psi2 = real(ifft2(Psihat));
+    end
+    
+    %----------------------------------------------------------------------
+    % Extract numerical solution
+    %----------------------------------------------------------------------
+    if(velocity)
+        U = U2(1:NX,1:NY);
+        V = V2(1:NX,1:NY);
+        Umag = sqrt(U.^2 + V.^2);
+        
+        clear Uhat Vhat U2 V2
+        
+        % error calculation
+        Umagdiff = Umag - umagana;
+        
+        errL2(N) = sum(sum(Umagdiff.^2))^(1/2)/(NX*NY);
+        errmax(N) = max(max(abs(Umagdiff)));
+        rmserr(N) = sqrt(sum(sum(Umagdiff.^2))/(NX*NY));
+        dxs(N) = dx;
+    else
+        Psi = Psi2(1:NX,1:NY);
+        clear Psihat Psi2
+        
+        % error calculation
+        %     Psidiff = Psi - Psiana;
+        Psidiff = (Psi - (Psi(1,1) - Psiana(1,1))) - Psiana;
+        
+        errL2(N) = sum(sum(Psidiff.^2))^(1/2)/(NX*NY);
+        errmax(N) = max(max(abs(Psidiff)));
+        rmserr(N) = sqrt(sum(sum(Psidiff.^2))/(NX*NY));
+        dxs(N) = dx;
+    end
+end
+
+%--------------------------------------------------------------------------
+% Plot error
+%--------------------------------------------------------------------------
+figure(10)
+loglog(dxs,rmserr,'b')
+hold on
+loglog(dxs,errL2,'r')
+loglog(dxs,errmax,'g')
+loglog(dxs,dxs.^2,'k')
+loglog(dxs,dxs.^4,'k')
+loglog(dxs,dxs.^6,'k')
+loglog(dxs,dxs.^8,'k')
+loglog(dxs,dxs.^10,'k')
+loglog(dxs,dxs.^12,'k')
