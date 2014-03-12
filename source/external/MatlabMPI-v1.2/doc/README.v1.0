@@ -1,0 +1,14 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+WHAT'S NEW IN VERSION 1.0
+
+-MatMPI_Delete_all returns a proper error message when deleteing.   
+
+-MPI_Run tells you to run MatMPI_Delete_all.
+
+-Changed MPI_Recv to reduce in network traffic when polling for messages.

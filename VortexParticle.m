@@ -15,17 +15,21 @@ diary off;
 
 % Add paths to the source code
 if ~isdeployed
-    addpath([pwd filesep 'src'])
-    addpath([pwd filesep 'src' filesep 'bipolar_colormap'])
-    addpath([pwd filesep 'src' filesep 'consolidator'])
-    addpath([pwd filesep 'src' filesep 'interparc'])
-    addpath([pwd filesep 'src' filesep 'plot3k'])
-    addpath([pwd filesep 'src' filesep 'PoissonFFT'])
-    addpath([pwd filesep 'src' filesep 'write_VTK'])
-    addpath([pwd filesep 'src' filesep 'write_VTK' filesep 'vtk_writers'])
-    addpath([pwd filesep 'src' filesep 'write_VTK' filesep 'vtk_writers' filesep 'VtkWriter-0.1'])
+    % add folder to source code
+    dir_src = pwd;
+    addpath([dir_src filesep 'source'])
+    addpath([dir_src filesep 'source' filesep 'PoissonFFT'])
     
-    addpath([pwd filesep 'src' filesep 'ext' filesep 'MOSAIC'])
+    % add external dependencies
+    dir_ext = [pwd filesep 'source' filesep 'external']; 
+    addpath([dir_ext filesep 'bipolar_colormap'])
+    addpath([dir_ext filesep 'consolidator'])
+%     addpath([dir_ext filesep 'interparc'])
+    addpath([dir_ext filesep 'plot3k'])
+%     addpath([dir_ext filesep 'write_VTK'])
+%     addpath([dir_ext filesep 'write_VTK' filesep 'vtk_writers'])
+%     addpath([dir_ext filesep 'write_VTK' filesep 'vtk_writers' filesep 'VtkWriter-0.1'])
+%     addpath([dir_ext filesep 'MOSAIC'])
 end
 
 % Set debug break points

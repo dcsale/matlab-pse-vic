@@ -1,0 +1,663 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***               v1.2br2               ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+REQUEST TO ALL USERS: Please read this entire manual (especially Section
+V - ERROR HANDLING) before using MatlabMPI.  PC users should also read the
+manual for running MatlabMPI on a PC (see README.pc).
+
+TABLE OF CONTENTS
+
+I.    INTRODUCTION
+II.   REQUIREMENTS
+III.  INSTALLING AND RUNNING
+IV.   LAUNCHING AND FILE I/O
+V.    ERROR HANDLING
+VI.   RUNNING ON LINUX
+VII.  RUNNING ON MacOSX
+VIII. RUNNING ON PC
+IX.   OTHER OPTIMIZATIONS
+X.    RUNNING IN BATCH MODE
+XI.   OTHER SETTINGS
+XII.  DIAGNOSTICS AND TROUBLESHOOTING
+XIII. FIRST-TIME USER'S RULES OF THUMB
+XIV.  FILES
+
+=========================================================================
+
+I. INTRODUCTION
+
+Matlab is the dominate programming language for implementing numerical
+computations and is widely used for algorithm development, simulation,
+data reduction, testing and system evaluation.  Many of these computations
+could benefit from faster execution on a parallel computer. There have
+been many previous attempts to provide an efficient mechanism for running
+Matlab programs on parallel computers.  These efforts have faced numerous
+challenges and none have received widespread acceptance.
+
+In the world of parallel computing the Message Passing Interface (MPI)
+is the de facto standard for implementing programs on multiple processors.
+MPI defines C and Fortran language functions for doing point-to-point
+communication in a parallel program.  MPI has proven to be an effective
+model for implementing parallel programs and is used by many of the world's
+most demanding applications (weather modeling, weapons simulation, aircraft
+design, etc.).
+
+MatlabMPI is set of Matlab scripts that implement a subset of MPI and allow
+any Matlab program to be run on a parallel computer. The key innovation of
+MatlabMPI is that it implements the widely used MPI "look and feel" on top
+of standard Matlab file i/o, resulting in a "pure" Matlab implementation
+that is exceedingly small (~300 lines of code).  Thus, MatlabMPI will run
+on any combination of computers that Matlab supports.  In addition, because
+of its small size, it is simple to download and use (and modify if you like).
+
+=========================================================================
+
+II. REQUIREMENTS
+
+- Matlab license
+
+- File system visible to all processors
+
+On shared memory systems, MatlabMPI only requires a single Matlab license
+as each user is allowed to have many Matlab sessions. On distributed
+memory systems, MatlabMPI will require one Matlab license per machine.
+However, if your scripts are compilable with Matlab's mcc command then
+you only need one license no matter what.
+
+Because MatlabMPI uses file I/O for communication, there must be a
+directory that is visible to every machine (this is usually also required
+in order to install Matlab).  This directory defaults to the directory that
+the program is launched from, but can be changed within the MatlabMPI
+program.
+
+=========================================================================
+
+III. INSTALLING AND RUNNING:
+
+1. Copy MatlabMPI into a location that is visible to all computers.
+
+2. Add MatlabMPI/src directory to matlab path (e.g. put
+
+      addpath ~/MatlabMPI/src
+
+   in your matlab/startup.m file.  You may require a different path than
+   the above statement, depending on where you install MatlabMPI.  For
+   more information about startup.m, please refer to the Matlab documentation).
+
+3. OPTIONAL: set rsh or ssh, set path to matlab executable (see Section
+   XI - OTHER SETTINGS)
+
+4. Type "help MatlabMPI" to get a list of all the functions.
+
+5. Type "help function_name" to get more info on a specific function.
+
+6. Go to the "examples" directory.
+
+7. To run from the Matlab command line, first start Matlab then type:
+
+      eval( MPI_Run('xbasic',     2,machines) );
+      eval( MPI_Run('basic',      2,machines) );
+      eval( MPI_Run('multi_basic',2,machines) );
+      eval( MPI_Run('probe',      2,machines) );
+      eval( MPI_Run('speedtest',  2,machines) );
+      eval( MPI_Run('basic_app',  2,machines) );
+      eval( MPI_Run('broadcast',  2,machines) );
+      eval( MPI_Run('blurimage',  2,machines) );
+
+   MPI_Run has three arguments: the name of the MatlabMPI program (without
+   the ".m" suffix), the number of machines to run the program on and the
+   "machines" argument which contains a list of names of machines on which
+   to run the program.  If the user directs MPI_Run to use N machines and
+   the "machines" list contains M names, where M > N, then MPI_Run will
+   execute the program on the first N processors in the list.
+
+   The "machines" argument can be of the following form:
+
+      machines = {};
+         Run on a local processor.
+
+      machines = {'machine1' 'machine2'}) );
+         Run on multiprocessors.
+
+      machines = {'machine1:dir1' 'machine2:dir2'}) );
+         Run on multiprocessors and communicate via dir1 and dir2,
+         which must be visible to both machines.
+
+8. To run using the Matlab compiler first start Matlab then type:
+
+      eval( MPI_Run( MPI_cc('xbasic'), 2,machines) );
+
+   or:
+
+      MPI_cc('xbasic');
+      eval( MPI_Run( 'compiled xbasic.exe'), 2,machines) );
+
+   NOTE: The MPI_cc command will only work if you have properly configured
+   your paths so that your code will compile (e.g. your LD_LIBRARY_PATH,
+   etc ...), which can take a little effort.  On Linux systems you will have
+   to add (at a minimum):
+
+      matlab/extern/lib/glnx86
+      matlab/bin/glnx86
+      matlab/sys/os/glnx86
+
+=========================================================================
+
+IV. LAUNCHING AND FILE I/O
+
+Launching from the Matlab command line using eval(MPI_Run(...)) allows
+for a variety of behavior.  MPI_Run(...) does two things. First, it
+launches a Matlab script on the specified machines with output redirected
+to a file. Second, if the rank=0 process is being run on the local machine,
+MPI_Run(...) returns a string containing the commands to initialize
+MatlabMPI, which allows MatlabMPI to be invoked deep inside of any Matlab
+program.
+
+This launching and output behavior is summarized below:
+
+   ---------------------------------------------
+   Machine     MPI Rank = 0      MPI Rank > 0  
+   ---------------------------------------------
+   Local     exec() > screen     unix > file
+   Remote       rsh > file        rsh > file
+   ---------------------------------------------
+
+The files that contain the program output are stored in the MatMPI
+directory which is created by MPI_Run.  Filenames are of the form:
+
+   program.rank.out
+
+where "program" is the name of the MatlabMPI program and "rank" is the
+rank of the MatlabMPI process that generated the output.  See ERROR
+HANDLING for more information about the MatMPI directory.
+
+=========================================================================
+
+V. ERROR HANDLING
+
+MatlabMPI handles errors pretty much the same as existing Matlab; however
+running hundreds of copies does bring up some additional issues.
+
+- If an error is encountered and your Matlab script has an "exit" statement
+  (which it should) then all the Matlab processes should die gracefully.
+
+- If a Matlab job is waiting for a message that will never arrive, then
+  you will have to kill it by hand by starting a new Matlab session and
+  typing:
+
+     MPI_Abort
+
+  If this doesn't work, you will need to log into each machine, type
+  "top" and kill the Matlab processes one by one.
+
+- MatlabMPI can leave a variety of files lying around, which are best
+  to delete once an error has occurred by starting Matlab and typing:
+
+     MatMPI_Delete_all
+
+  If this doesn't work, you can delete the files by hand. The files can
+  be found in two places -  the launching directory and the communication
+  directory (which by default are the same place).
+
+  In the launch directory you may have leftover files that look like:
+
+     MatMPI/*
+
+  In the communication directory you may have leftover files that look
+  like:
+
+     p<rank>_p<rank>_t<tag>_buffer.mat
+     p<rank>_p<rank>_t<tag>_lock.mat
+
+  It is very important that you delete these files.  In general, if you
+  are using a public directory to do communication (e.g.; /tmp), you should
+  create a subdirectory first (e.g.; /tmp/joe) and use this directory
+  for communication.
+
+=========================================================================
+
+VI. RUNNING ON LINUX
+
+- MatlabMPI now performs great on Linux clusters.  The key is changing the
+  "acdirmin" parameter from 30 seconds to 0.1 seconds when you NFS mount
+  the file system that is used for communication. Here is the mount command
+  we found that worked well for us:
+
+     mount -o acdirmin=0.1, \
+      rw,sync,hard,intr,rsize=8192,wsize=8192,nfsvers=2,udp \
+      node-a:/export/gigabit  /wulf/gigabit
+
+  NOTE: If you choose to set these parameters in the automounter, you MUST
+  RESTART the automounter on each machine that this automount listing.
+
+- WARNING: There is currently a bug with the Matlab GUI on Linux.  You may
+  get the following error (or any other weird error):
+
+     ??? Error using ==> mkdir
+     tcsh: No entry for terminal type "'MATLAB Command Window'"tcsh: using
+     dumb terminal settings.
+
+  If you get this error, try one of the following:
+
+  1. Run the following command and restart Matlab:
+
+        setenv MATLAB_SHELL  /bin/sh
+
+     If this fixes the problem, then you may want to add this line to your
+     .bashrc (or equivalent dot-file if you use a different shell).
+
+  2. If setting the MATLAB_SHELL environment variable does not fix the
+     problem, try deleting your ~/.matlab directory and restart Matlab from
+     the command line using the command:
+
+        matlab -nojvm
+
+=========================================================================
+
+VII. RUNNING ON MacOSX
+
+MatlabMPI works on MacOSX without modification.  Most likely you will have
+to use ssh instead of rsh (see OTHER SETTINGS below).
+
+=========================================================================
+
+VIII. RUNNING ON PC
+
+Installing and running MatlabMPI on a PC requires additional steps.
+Please read the accompanying README.pc file.
+
+=========================================================================
+
+IX. OTHER OPTIMIZATIONS
+
+- For even better performance on a cluster try the following:
+
+  1. Put a copy of Matlab on each node and alias the 'matlab'
+     command to the copy on each of the nodes.
+
+  2. Cross-mount all the local disks so each node is receiving
+     files on its own disk.
+
+  NOTE: With these optimizations, sometimes Matlab can launch too fast
+  with weird NFS errors as a result.  We are not sure of the cause, but
+  we have found that removing all path statements from your .cshrc file
+  can help.
+
+- Sometimes odd behavior results when very large (~100 MByte) messages
+  are used.  If you notice problems, you might try sending several smaller
+  messages.
+
+- Sometimes a large amount of NFS GETATTR traffic can be generated if
+  you are waiting a long time to receive files.  You can probe this
+  traffic by logging into the NFS server as root and typing
+  "snoop | grep <machine-name>", and watch for "GETATTR" packets.
+
+=========================================================================
+
+X. RUNNING IN BATCH MODE
+
+There are several ways to deal with batch:
+
+1. Request an interactive queue (many systems support) this.
+
+2. Write a matlab script that contains your MPI_Run command (e.g. RUN.m)
+   and then in your batch script put the line:
+
+      matlab -nojvm -nosplash -display null < RUN.m
+
+   Then you can submit your batch script to a queue.
+
+3. If you want to do things by hand.  The best way is to see what is
+   going on is to launch on a non-existent machine, e.g.
+
+      MPI_Run('xbasic',2,{'unknown'});
+      Launching MPI rank: 1 on: unknown
+      Launching MPI rank: 0 on: unknown
+      unix_launch =
+        rsh unknown -n 'cd /home/kepner/MatlabMPI/examples;
+        /bin/sh ./MatMPI/Unix_Commands.unknown.0.sh &' &
+
+   The above output lists the precise rsh command that is generated.
+   You can copy and edit this command to run your program.  In addition,
+   you should examine the file:
+
+      ./MatMPI/Unix_Commands.unknown.0.sh
+
+   This contains the matlab invocations.
+
+=========================================================================
+
+XI. OTHER SETTINGS
+
+The file:
+
+        MatlabMPI/src/MatMPI_Comm_settings.m
+
+can be edited by users to change the behavior of MatlabMPI.  Currently,
+the settings include:
+
+   - unix vs. windows (disabled)
+   - rsh vs. ssh (which method to use to launch MatlabMPI processes on
+     remote machines)
+   - setting the location of the matlab executable
+
+You can either edit this file directly or copy it into the directory you
+are running out of and edit it locally.
+
+By default, MatlabMPI uses rsh.  Unfortunately, switching from rsh to ssh
+requires more than just changing the machine_db_settings.remote_launch
+setting.  The following procedure will allow you to use ssh without being
+prompted for a password (a necessary requirement for MatlabMPI):
+
+   1. Set machine_db_settings.remote_launch inside MatMPI_Comm_settings.m
+      to ssh.
+
+   2. Create an RSA key with the following command (accept all defaults):
+
+         ssh-keygen -t rsa
+
+   3. Append the RSA public key to the list of authorized key.
+
+         cat ~/.ssh/id_rsa >> ~/.ssh/authorized_hosts
+
+   4. Log into every machine that MatlabMPI will launch processes on and
+      accept each machine's host key.
+
+=========================================================================
+
+XII. DIAGNOSTICS AND TROUBLESHOOTING
+
+1. Please read the documentation.
+
+   Please read the Section V - ERROR HANDLING and Section IX - OTHER
+   OPTIMIZATIONS.
+
+2. Make sure you can launch matlab.
+
+   Type "which matlab" on each of the machines you are trying to run on. 
+   If it says:
+
+      matlab: Command not found
+
+   then you need to put it in your path.  You can also hard code the path
+   into MatlabMPI by editing the MatlabMPI/src/MatMPI_Comm_settings.m and
+   changing the line:
+
+      matlab_location = ' matlab ';
+
+   Note that you still must be able to run Matlab from the shell prompt on
+   the machine on which you are launching your MatlabMPI program.
+
+3. Test that MatlabMPI is in your path.
+
+   Start matlab and type:
+
+      help MatlabMPI
+
+   if you get the error:
+
+      MatlabMPI not found
+
+   then you need to put MatlabMPI/src in you path. See the INSTALLING
+   AND RUNNING instructions in README and README.pc.
+
+4. Starting up (xbasic script).
+
+   Go to the MatlabMPI/src/examples directory.  Edit RUN.m so that it
+   only runs the 'xbasic' script.  Also, change the machines variable so
+   that MatlabMPI runs on the machines that you want. Start matlab and
+   type RUN. This should run a few seconds and return 'SUCCESS'.  Quit
+   matlab and look at the output of the other process, for example type:
+
+      more MatMPI/*.out
+
+   If it ran successfully, great.  If not, take a look at the error
+   message.
+
+5. Testing MatlabMPI
+
+   There are man scripts in the examples directory which are useful
+   for testing performance.  In this section we explaing how they can
+   be used.
+
+   a. Start up peformance (basic script)
+
+      Repeat step 4 with the 'basic' script.  'basic' sends a message
+      between two processors. If it hangs, kill matlab and look at the
+      output.  If it runs successfully, run it a few times and note the
+      runtimes.  The first time may take 20 seconds, subsequent times
+      should take ~2 seconds.  If it takes a lot longer, Matlab may be
+      taking a long time to launch on remote machines.  There are two
+      likely causes.
+
+      The first is that sometimes your $PATH variable can take a long time
+      to evaluate.  Comment out various environment variables and see if it
+      affects performance.
+
+      The second is the latency in launching Matlab.  This latency can
+      sometimes be alleviated by installing a local copy of Matlab on each
+      machine so it doesn't have to be sent over your network.
+
+   b. Messaging peformance (multi_basic script)
+
+      Repeat step 4 with the 'multi_basic'.  'multi_basic' sends several
+      messages between two processors.  It is very useful for debugging
+      performance problems that can occur when you cross-mount file systems
+      to achieve better messaging performance. If multi_basic runs
+      successfully, run it a few times and note the runtimes.  The first time
+      may take 20 seconds, subsequent times should take ~2 seconds.  If it
+      takes a lot longer and you notice lots of times around integer seconds
+      (e.g. 1 second, 2 seconds, 30 seconds), then this most likely means
+      that there are some lags in updating the cache on your filesystem.
+      This is particularly common in Linux.  See Section VI - RUNNING ON
+      LINUX for good ways to mount the file system.
+
+   c. High peformance messaging (speedtest script)
+
+      Repeat step 4 with the 'speedtest' script.  'speedtest' sends many
+      messages of increasing size between two (or more) processors.  It is
+      very useful for testing the limits of your filesystem.  It might take
+      several minutes to run.  After it has run, type:
+
+         total_time
+
+      You will see a listing of the times it took to send all the messages.
+      These should start with small numbers (~50 millesconds) and eventually
+      get up to around 1 second or more.  Next type:
+
+         bandwidth
+
+      This is the simultaneous bandwidth between the two processors. It
+      should start out small, and then grow to around 10 Megabytes/second or
+      greater. You should also look at the results of speedtest from other
+      processors which are saved in speedtest.1.mat, ...
+
+   d. High Performance computation (blurimage script)
+
+      Repeat the procedure in Step 4 with the 'blurimage' script. This
+      filters an image and reports the performance in Gigaflops.
+      It is a good test of performance.
+
+   e. Testing everything (unit_test_all)
+
+      Edit the unit_test_all script to run on the machines you want (be
+      sure and remember the "&" for the first machine).  This script will
+      test everything.  It can take a while.  There is also a similar script
+      called unit_test_all_mcc, which tests all the scripts with the compiler
+      command (MPI_cc).
+
+6. Testing your own program.
+
+   Hopefully the above scripts will give you some insight into how to make
+   your own program run better.  Here are some more specific instructions.
+
+   a. Timing
+
+      Time the part of the program you want to run in parallel. Rememember
+      that MatlabMPI only can improve this part of the program.  Furthermore,
+      as the parallel part runs faster, the non-parallel part will start
+      dominating the overalltime (a.k.a. Amdahl's law).
+
+      Note that while parallization can reduce computation time, it adds
+      overhead due to sending messages.  Compare the times you get for your
+      messages with times in speedtest.  You should also time how long it
+      takes to send messages in your program.  If your program spends too
+      much time performing communication, your program may not benefit from
+      the reduced time in computation.  Which leads us to the next section...
+
+   b. General Tuning
+
+      Minimize communication.  Try and do as much computation as you can
+      without sending messages.  Also, it is much much better to send a few
+      big messages than many little messages.
+
+      You should try and divide the work among the different processors so
+      that it is even as possible (this is called Load Balancing).  If the
+      workload varies as a function of the data, than you might want to set
+      up a client/server model that deals out work on an as needed basis.
+
+      Avoid restart.  You can start MatlabMPI anywhere in your program,
+      however you should also avoid restarting MatlabMPI in your program.
+
+=========================================================================
+
+XIII. FIRST-TIME USER'S RULES OF THUMB
+
+Thanks to Theresa Meuse for starting this section.
+
+- Delete stale copies of the MatMPI directory prior to launching your program.
+  See the next item for more details.
+
+- Use the RUN.m script included in the examples directory to run your program.
+  RUN.m kills stale Matlab processes leftover from a prior MatlabMPI program,
+  removes the MatMPI directory, then launches your program.
+
+- Make sure the directory containing a MatlabMPI program is not write-
+  protected; MatlabMPI needs to create and write to the MatMPI directory.
+  In Windows, we have seen directories become write-protected when stepping
+  through a MatlabMPI program with the Matlab debugger without completing
+  execution.
+
+- Make sure that when installing a new version of MatlabMPI that all source
+  code from the old version is deleted or that your path points to only the
+  new version.  Make sure that there are no copies of any old MatlabMPI source
+  code in your current working directory.  This leads us to the next point:
+
+- Don't change the directory structure of MatlabMPI.  To quote the old adage:
+  "If it ain't broke, don't fix it."  Changing the directory structure may
+  inadvertantly lead your application to behave differently than expected.
+
+- Make sure your application does not use "clear" or "clear all" at any point
+  within your MatlabMPI code.  When you run:
+
+     eval( MPI_Run('...', ..., ...) );
+
+  a global variable called MPI_COMM_WORLD is created.  Almost all the MPI
+  functions require the information contained in MPI_COMM_WORLD.
+
+- Make sure that your application does not change its working directory during
+  execution.  Otherwise, MatlabMPI cannot find/access the MatMPI directory.
+
+- Tag management is crucial.  Take care when creating and managing tag values.
+
+- READ SECTION XII - DIAGNOSTICS AND TROUBLESHOOTING.  Start with the examples
+  and be able to execute them on your local machine only.  Then get the
+  examples working on multiple machines.  Then develop an example for yourself.
+
+- Exiting and restarting Matlab between runs of MatlabMPI programs can improve
+  performance.  Restarting Matlab performs a number of tasks, e.g. clearing
+  out memory, closing file, etc., that can potentially improve performance of
+  MatlabMPI programs running in a new instance of Matlab.
+
+=========================================================================
+
+XIV. FILES
+
+  Description of files/directories:
+
+  README            This file.
+  doc/              Papers written on MatlabMPI.
+  examples/         Directory containing example and benchmark programs.
+  src/              MatlabMPI source file.
+
+  doc/
+    README.vX.X     What's new in this version.
+    credit          How to cite MatlabMPI.
+    mit_license     MIT License statement.
+    todo            To do list.
+
+  examples/
+    xbasic.m        Extremely simple MatlabMPI program that
+                    prints out the rank of each processor.
+    basic.m         Simple MatlabMPI program that sends data from
+                    processor 1 to processor 0.
+    multi_basic.m   Simple MatlabMPI program that sends data from
+                    processor 1 to processor 0 a few times.
+    probe.m         Simple MatlabMPI program that demonstrates the
+                    using MPI_Probe to check for incoming messages.
+    broadcast.m     Tests MatlabMPI broadcast command.
+    basic_app.m     Examples of the most common usages of MatlabMPI.
+    basic_app2.m    Examples of the most common usages of MatlabMPI.
+    basic_app3.m    Examples of the most common usages of MatlabMPI.
+    basic_app4.m    Examples of the most common usages of MatlabMPI.
+    blurimage.m     MatlabMPI test parallel image processing application.
+    speedtest.m     Times MatlabMPI for a variety of messages.
+    synch_start.m   Function for synchronizing starts.
+    machines.m      Example script for creating a machine description.
+    unit_test.m     Wrapper for using an example as a unit test.
+    unit_test_all.m Calls all of the examples as way of testing the
+                    entire library.
+    unit_test_mcc.m Wrapper for using an example as a mcc unit test.
+    unit_test_all_mcc.m Calls all of the examples using MPI_cc 
+                    as way of testing the entire library.
+
+  src/           ------- Core Lite Profile -------         
+    MPI_Run.m              Runs a Matlab script in parallel.
+    MPI_Init.m             Initializes at the beginning.
+    MPI_Comm_size.m        Gets number of processors in a communicator.
+    MPI_Comm_rank.m        Gets rank of current processor within a communicator.
+    MPI_Send.m             Sends a message to a processor (non-blocking).
+    MPI_Recv.m             Receives message from a processor (blocking).
+    MPI_Finalize.m         Cleans up at the end.
+
+
+                 ------- Core Profile -------
+    MPI_Abort.m            Function to kill all Matlab jobs
+                           started by MatlabMPI.
+    MPI_Bcast.m            Broadcasts a message (blocking).
+    MPI_Probe.m            Returns a list of all incoming messages.
+    MPI_cc.m               Compiles using Matlab mcc.
+
+                 ------- Core Plus Profile -------
+
+                           [No functions, yet.]
+
+                 ------- User Utility functions -------
+
+    MatMPI_Comm_dir.m      MatlabMPI function for switching directory
+                           used for carrying out communication.
+    MatMPI_Save_messages.m  MatlabMPI function to prevent messages
+                           from being deleted; useful for debugging purposes.
+    MatMPI_Delete_all.m    MatlabMPI function to delete all files created
+                           by MatlabMPI.
+    MatMPI_Comm_settings.m Can be edited by users to change the
+                           behavior of MatlabMPI (unix/windows, rsh/ssh, ...).
+
+                 ------- Library Utility functions -------
+
+    MatMPI_Buffer_file.m   MatlabMPI function for generating
+                           buffer file name.  Used by MPI_Send and MPI_Recv.
+    MatMPI_Lock_file.m     MatlabMPI function for generating
+                           lock file name.  Used by MPI_Send and MPI_Recv.
+    MatMPI_Commands.m      MatlabMPI function for generating
+                           commands.  Used by MPI_Run.
+    MatMPI_Comm_init.m     MatlabMPI function for creating MPI_COMM_WORLD.
+                           Used by MPI_Run.
+
+  MatMPI_mcc_wrappers/     Contains wrapper functions for using MPI_cc.
+

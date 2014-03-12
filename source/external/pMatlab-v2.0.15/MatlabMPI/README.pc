@@ -1,0 +1,290 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+NOTE: This document describes installation of MatlabMPI on a PC.  If you
+are installing MatlabMPI as a part of another package (e.g. pMatlab),
+then replace all references to MatlabMPI with packagename\MatlabMPI
+(e.g. pMatlab\MatlabMPI).
+
+TABLE OF CONTENTS
+
+I.   PC INSTALL
+II.  PC (STANDALONE)
+III. PC AND A UNIX CLUSTER
+IV.  PC AND A PC CLUSTER
+V.   TROUBLESHOOTING
+VI.  DENICOMP RSH DAEMON
+
+=========================================================================
+
+I. PC INSTALL
+
+The PC versions of MatlabMPI can be run in three different environments:
+
+   1. PC (standalone)
+   2. PC and a Unix cluster
+   3. PC and a PC cluster
+
+=========================================================================
+
+II. PC (STANDALONE)
+
+1. If you are installing directly onto a PC, please note that your
+   startup.m file is typically found in:
+
+      $matlabroot/toolbox/local
+
+   which on my PC ends up to be:
+
+      C:\MATLAB6p5\toolbox\local\startup.m
+
+
+2. Add .\MatMPI to path in startup.m
+
+      addpath .\MatMPI
+
+3. If you haven't already add MatlabMPI\src to path, for example:
+
+      addpath C:\MatlabMPI\src
+
+=========================================================================
+
+III. PC AND A UNIX CLUSTER
+
+1. You *MUST* have a cross mounted file system so that your PC and Unix
+   machines can see the same files.  Let's assume that this is a SAMBA
+   mounted system with the following mount:
+
+      Z:  ->  /home/username
+
+2. Copy MatlabMPI to Z:
+
+3. Add the following to Z:\matlab\startup.m
+
+      if (isunix)
+         addpath /home/username/MatlabMPI/src
+      end
+      if (ispc)
+         addpath Z:\MatlabMPI\src
+         addpath .\MatMPI
+      end
+
+4. On your PC add the following to your local startup.m
+   (e.g. $matlabroot\toolbox\local\startup.m)
+
+       addpath Z:\matlab
+       startup
+
+5. Examine the file MatlabMPI\src\MatMPI_Comm_settings.m and change the
+   following:
+
+   - Set the location of matlab on the Unix machines, default is ' matlab ',
+     which may work:
+
+	matlab_location = ' matlab ';
+
+   - Edit the following to hard code the correct PC/unix mappings:
+
+        if (isunix)
+           machine_db_settings.pc_unix_dir_map = {'Z:' getenv('HOME')};
+        end
+        if (ispc)
+           machine_db_settings.pc_unix_dir_map = {'Z:' '/home/username'};
+        end
+
+6. Whenever you launch you should use the following machine name syntax,
+   which explicitly tells MatlabMPI the types of machines you are running
+   on:
+
+      machines = {'mypc:pc' 'node-1:unix' 'node-2:unix'}
+
+=========================================================================
+
+IV. PC AND A PC CLUSTER
+
+1. You *MUST* have a cross mounted file system so that all your PC machines
+   can see the same files.  Let's assume that this file system has been
+   mounted on the Z: drive.
+
+2. Copy MatlabMPI to Z:\MatlabMPI
+
+3. Add the following to Z:\matlab\startup.m
+
+      addpath Z:\MatlabMPI\src
+      addpath .\MatMPI
+
+4. On each PC Add the following to your local startup.m
+   (e.g. $matlabroot\toolbox\local\startup.m)
+
+      addpath Z:\matlab
+      startup
+
+5. You also *MUST* have an rsh daemon installed on each of PCs you are
+   launching. MatlabMPI has been tested with the rshd from Denicomp
+   (www.denicomp.com), which costs ~$50.  Be sure and talk to you system
+   administrator before installing an rsh daemon.
+
+6. Customize the behavior of the Denicomp rshd:
+
+   Read Section VI - DENICOMP RSH DAEMON for more details.
+
+7. BUG: Make sure that the Matlab flexLM license manager is running on
+   each PC.  I don't know how to do this automatically.  One way is to
+   simply login into the console of each machine.
+
+8. BUG: PCs don't like multiple users logged in at the same time, so you
+   should make sure this doesn't happen.
+
+9. Whenever launch you should use the following machine name syntax,
+   which explicitly tells MatlabMPI the types of machines you are
+   running on
+
+      machines = {'mypc:pc' 'node-1:pc' 'node-2:pc' }
+
+10. IMPORTANT: MPI_Abort can only kill Matlab processes on remote Windows
+    machines running XP.  This is because XP is the only version of Windows
+    with a command line program ("taskkill") that can kill processes.  A
+   "kill" utility for other versions of Windows is included in their Resource
+    Kits.  Free utilities are also available.  MPI_Abort can be modified to
+    use these utilities.
+
+11. IMPORTANT: MPI_Abort will kill ALL MATLAB PROCESSES on a remote Windows XP
+    machine RUNNING UNDER THE USER'S USERNAME.  This can cause problems if the
+    user is running other Matlab processes.
+
+    Note that other versions of Windows do NOT have a concept of user context.
+    Thus, kill utilities can only kill all Matlab processes REGARDLESS OF WHICH
+    USER LAUNCHED THEM.
+
+=========================================================================
+
+V. TROUBLESHOOTING
+
+- Note that computer names are capitalized in Windows.  This can cause
+  problems if the computer's name is specified in the machines list in
+  lowercase and the computer does not have an rsh daemon installed.
+
+  For example, suppose the name of the computer is "MYCOMP".  If the name
+  of the computer is specified in the machines list as "mycomp", e.g.
+
+     machines = {'mycomp:pc' ...}
+
+  this will cause MatlabMPI to attempt to rsh into MYCOMP instead of
+  launching the MatlabMPI program directly.
+
+- If you start Matlab in a directory that does not contain a MatMPI
+  directory, you will get a warning similar to the following:
+
+     Warning: Name is nonexistent or not a directory: .\MatMPI.
+     > In C:\MATLAB6p5\toolbox\matlab\general\path.m at line 116
+       In C:\MATLAB6p5\toolbox\matlab\general\addpath.m at line 88
+       In z:\matlab\startup.m at line 6
+       In C:\MATLAB6p5\toolbox\local\startup.m at line 2
+       In C:\MATLAB6p5\toolbox\local\matlabrc.m at line 199
+
+  If you wish to hide this error, modify your startup.m file such that 
+  the addpath .\MatMPI command is surrounded by calls to the warning command:
+
+     warning off;
+     addpath .\MatMPI
+     warning on;
+
+  The calls to the warning command will suppress the display of any warnings.
+
+- The MPI_Abort command by default works on only Windows XP.  This is
+  because XP is the only version of Windows that contains a command line
+  utility, "taskkill.exe", to kill processes.  A similar command line
+  utility, "kill.exe", is available for Windows 2000 but only in the
+  Resource Kit.  In order to use MPI_Abort with Win2K, you must buy and
+  install the Windows 2000 Resource Kit and substitute the "kill" command
+  for "taskkill" in MPI_Abort.m.  The code to use "kill" is already written,
+  simply uncomment it then comment out the "taskkill" code.
+
+  If you do not wish to purchase the Resource Kit, there are other freely
+  available utilities that provide the same functionality, such as Pstools
+  from Sysinternals (www.sysinternals.com).
+
+  Unfortunately, Windows 2000 does not appear to provide a "user context."
+  Consequently, when MPI_Abort is run, it will kill ALL Matlab processes
+  running on a machine, regardless of who executed each Matlab process.
+  The taskkill utility avoids this problem by kill only Matlab processes
+  that belong to the user who executed the MPI_Abort command.  
+
+=========================================================================
+
+VI. DENICOMP RSH DAEMON
+
+MatlabMPI has been tested and validated on Windows using Winsock RSHD/NT,
+an rsh daemon from Denicomp Systems.  However, getting RSHD/NT to work
+properly with MatlabMPI requires a specific setup.  This section describes
+the setup procedure for RSHD/NT used to test MatlabMPI on Windows.  RSHD/NT
+can be obtained from www.denicomp.com and runs only on Windows NT, 2000 and
+XP.
+
+Repeat the following procedure on each machine that will run MatlabMPI.
+NOTE: You may have to deviate from procedure slightly, depending on your
+particular requirements and Windows setup.
+
+1. Log in as administrator.
+
+2. Download and install Winsock RSHD/NT from www.denicomp.com.
+
+   a. During installation, if you choose to enable security features, go
+      to step 3.  If not, go to step 8.
+
+3. Go to Control Panel and start the RSHD configuration utility.
+
+4. Select the "Security and Logs" tab.
+
+   a. Check the "Must Remote Users be Valid Users on this System?" option.
+
+   b. Check the "Must Remote Users be Set Up as Equivalent Users?" option.
+
+5. Select the "User Equivalency" tab.
+
+   Enter the required information for each user that will be running
+   MatlabMPI programs on this machine.  The same user name should be
+   entered for both "Remote User" and "Windows User".
+
+   IMPORTANT: You MUST click "Add" to add a user.  Clicking "OK" or "Apply"
+   will not add users.
+
+   NOTE: Step 6 allows users to log in without a password, which MatlabMPI
+   requires.  However, this incurs large administrative overhead and
+   potentially low security.  Read the "RSHD/NT and Windows Security"
+   section in the documentation for other options.
+
+6. Select the "RSH Options" tab.
+
+   a. Uncheck the "Attempt Redirection on Every Command?" option.
+
+   b. Uncheck the "Wait for Command to Complete?" option.
+
+7. Click "OK".
+
+8. Open Notepad.
+
+   a. Type the following line:
+
+      net use z: \\computername\sharename
+
+      where:
+
+      - "computername" is the name of the file server.
+      - "sharename" is the directory on "computername" that contains the
+        the MatlabMPI library application code.
+      - "z:" is the drive to map "\\computername\sharename" to.  You may
+        select any drive, as long as it is the same drive on every machine.
+
+   b. Save this file as "automap.ini" in the same directory that the RSH
+      daemon was installed in (default is C:\WRSHDNT).
+
+      NOTE: "automap.ini" causes RSHD/NT to automatically mount
+      "\\computername\sharename" to z: each time a valid user logs in.
+      Read the "Using Mapped Drives and Printers through RSHD/NT" and
+      "Using AUTOMAP.INI to Automatically Map Drives/Printers" sections
+      for more information.

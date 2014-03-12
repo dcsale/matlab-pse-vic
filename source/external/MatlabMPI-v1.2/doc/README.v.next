@@ -1,0 +1,123 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+WHAT'S NEW IN VERSION X
+
+-Known bugs:
+   mkdir() command doesn't work on SunOS.
+
+
+-Added pc support.  Resulting in numerous changes:
+
+
+
+http://www.microsoft.com/windows2000/en/server/help/default.asp?url=/windows2000/en/server/help/ntcmds.htm
+
+[Done] Default to local machine type on leader and unix on followers.
+
+[Done] Add syntax machine[':unix'|':pc'][:dir]
+  type = pc or unix (add linux, sun, ... for compilation?)
+
+[DONE] figure out DOS ' ; & syntax for rsh command.
+  Use " instead '
+
+Figure out DOS rshd configuration:
+   rshd: automap.ini
+    net use Z: \\strata\kepner
+
+   -customize for user.
+   -terminal behavior.
+   -matlab flexLM behavior.
+
+
+[DONE] add pc/unix directory mapping to settings
+  ask Andy McCabe
+  A: Can be done.  Check http://msdn.microsoft.com
+
+  WORKAROUND: User define mapping in MatMPI_Comm_settings,
+    create directory pairings.
+[DONE]    Step 1: Allow rsh launch.  Create unixpwd and pcpwd in MPI_Run.
+[DONE]    Step 2: in MPI_Init scan directory names and convert to unix type.
+          Step 3: Create send_dir and recv_dir.  send_dir defaults to recv_dir,
+          but can be rank dependent (allows simple tunnel_host implementation).
+
+    Alternative:  create MPI_COMM_WORLD_unix.mat and MPI_COMM_WORLD_pc.mat
+     with appropriate directories.
+
+[DONE] Need to allow control of exit for host node.  Perhaps
+  a command like MatMPI_Host_rank(comm). Returns rank
+  of host or -1 if host isn't a target machine.
+  This would allow syntax like:
+    if (my_rank <> MatMPI_Host_rank(comm))
+      exit;
+    end
+
+[Done] Add MatMPI_Host_rank syntax to all example codes.
+
+[Done] Need to allow away to force background launching on host
+  node (i.e. get rid of 'setenv $HOST ' hack to run unit tests).
+  Change machines syntax to:
+    machine['&'][':unix'|':pc'][:dir]
+  where '&' would force launching on background on host
+  (and sets MatMPI_Host_rank(comm) == -1).
+
+Add checks of MPI_Run syntax to unit tests.
+
+
+Add a command like:
+  MatMPI_Recv_dir(rank,dir)
+  to create rank dependent recieve directory,
+  specifically addresses case if leader can't cross mount
+  all of follower disks.
+
+  No.  Instead add MPI_COMM_WORLD.tunnel_host,
+  then inside MatMPI_Buffer_file do:
+
+   if ((source == MatMPI_Host_rank(comm)) && MatMPI_Tunnel_host(comm))
+    dir = source dir instead of recv dir
+   end
+
+  Change machines syntax to:
+    machine['&'][+][':unix'|':pc'][:dir]
+
+[DONE] MatMPI_Delete_all (how to clean up directories?)
+
+[DONE] Bug: why is comm via local dir slow when interactive (possibly due to
+     REALTIME priority).
+
+Bug: 'MASTER:C:\...'  syntax tries to run .sh scripts?
+
+Check MPI_cc.
+  Create cross compile script:
+    MPI_Run('cross_compile',1,{'target'})
+    cross_compile.m:
+      MPI_Init;
+      MPI_cc('my_script');
+      MPI_Finalize;
+      exit;
+
+    eval(MPI_Run('compiled my_script',N,{'host:pc','targer1:unix','target2:unix', ...}
+
+[DONE] Check MPI_Bcast (symbolic links)
+  Use shortcuts? Aliases?
+  WORKAROUND: Make duplicates.
+
+Bug: Performance issues with MPI_Bcast on pc.
+
+[TEST] MPI_Abort (how to kill windows jobs)
+  To kill all remote jobs.
+  use:  tasklist /?, taskkill /?, schtasks /?, netsh /?
+
+  Could potentially set title bar in "start command" and then
+    use this to track to the process via tasklist or taskkill.
+
+  Netsh could be good way to launch jobs on other windows platforms
+
+  WORKAROUND:  User aborts jobs by hand, use taskill on remote
+    windows platforms.
+
+

@@ -1,0 +1,22 @@
+ MatlabMPI
+ Dr. Jeremy Kepner (kepner@ll.mit.edu)
+ MIT Lincoln Laboratory
+
+ Please use the following citation:
+  "Parallel Programming with MatlabMPI", Jeremy Kepner,
+   Proceedings of the High Performance Embedded
+   Computing (HPEC 2001) workshop, 25-27 Sep 2001,
+   MIT Lincoln Laboratory, Lexington, MA
+
+ URL:
+   http://arXiv.org/abs/astro-ph/0107406
+   http://www.ll.mit.edu/HPEC
+
+ Acknowledgements:
+   -John Grosh (OSD)
+   -DoD High Performance Computing Modernization Office
+
+ Contributors:
+   Stan Ahalt (Ohio State University)
+   John Nehrbass (Ohio State University)
+   Glenn Schrader (MIT Lincoln Laboratory)

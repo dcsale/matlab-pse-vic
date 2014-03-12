@@ -1,0 +1,34 @@
+
+
+
+
+                MatlabMPI Software Summary
+
+                    Dr. Jeremy Kepner
+                  MIT Lincoln Laboratory
+
+  MatlabMPI is a Matlab implementation of the Message Passing Interface
+(MPI) standard and allows any Matlab program to exploit multiple
+processors. MatlabMPI currently implements the basic MPI functions:
+
+    MPI_Run        Runs a matlab script in parallel.
+    MPI_Init       Initializes MatlabMPI.
+    MPI_Comm_size  Gets number of processors in a communicator.
+    MPI_Comm_rank  Gets rank of current processor within a communicator.
+    MPI_Send       Sends a message to a processor (non-blocking).
+    MPI_Recv       Receives message from a processor (blocking).
+    MPI_Finalize   Cleans up at the end.
+    MPI_Abort      Function to kill all matlab jobs started by MatlabMPI.
+    MPI_Bcast      Broadcast a message (blocking).
+    MPI_Probe      Returns a list of all incoming messages.
+
+that are the core of the MPI point-to-point communications standard. The
+key technical innovation of MatlabMPI is that it implements the widely
+used MPI ``look and feel'' on top of standard Matlab file I/O, resulting
+in an extremely compact (~200 lines) and ``pure'' implementation which
+runs anywhere Matlab runs.  The performance has been tested on both
+shared and distributed memory parallel computers.  MatlabMPI can match
+the bandwidth of C based MPI at large message sizes. A test image
+filtering application using MatlabMPI achieved a speedup of ~200 on a
+parallel computer.
+

@@ -1,0 +1,31 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+WHAT'S NEW IN VERSION 0.3
+
+-MatlabMPI now performs great on Linux clusters.  The key is
+ changing the "acdirmin" parameter from 30 to 0.1 when you
+ NFS mount the filesystem that is used for communication.
+ Here is the mount command we found that worked well for us:
+
+   mount -o acdirmin=0.1,rw,sync,hard,intr,rsize=8192,wsize=8192,nfsvers=2,udp \
+   node-a:/export/gigabit  /wulf/gigabit
+
+-Several minor changes/additions in examples/ directory:
+    xbasic.m        eXtreme basic, just prints rank.
+    basic.m         Now prints "SUCCESS" when it has completed.
+    multi_basic.m   Runs multiple sends and recieves and times them.
+    blurimage.m     Now prints out the Gigaflops that were achieved.
+
+-MatlabMPI has been tested on SGI IRIX, Sun Solaris, IBM AIX,
+ HP-UX, Linux and Windows.  It should run everywhere Matlab runs.
+ To run in NT currently requires launching  each Matlab session by hand.
+
+-MatlabMPI has been benchmarked on SGI, Sun, HP, IBM and Intel
+ systems and achieves expected hardware limits with the exception of
+ Linux due to the poor implementation of NFS in Linux.  This problem is
+ currently being addressed by the Linux community.

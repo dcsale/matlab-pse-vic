@@ -1,0 +1,38 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+WHAT'S NEW IN VERSION 0.2
+
+-The "matlab_mpirun" Bourne shell script has now been replaced with
+ the MPI_Run matlab command, which allows starting MatlabMPI
+ at *any* point deep inside in a Matlab program.  This also
+ makes it much easier to run MatlabMPI interactively and on non-Unix machines.
+
+-Send and receive multiple variables.  Can now send and receive an arbitrary
+ number of variables.
+
+-Added MPI_Bcast.  MPI_Bcast has been added and uses symbolic links
+ to minimizes the amount of traffic.
+
+-Added "profiles".  All MatlabMPI functions will now be part of either
+ the "Core Lite", "Core" or "Core Plus" profiles.
+
+-Using MatlabMPI with ssh and ssh2 instead of rsh has been demonstrated
+ at Ohio State University (Thanks!).  This will be incorporated in
+ at a late date once the Windows remote launching mechanism has been
+ figured out.  For now, to use ssh/ssh2 do the following:
+  (1) Setup up ssh so that it does not require passwords.
+  (2) Edit the last line of src/MatMPI_Launch.m to use ssh or ssh2.
+
+-MatlabMPI has been tested on SGI IRIX, Sun Solaris, AIX,
+ HP-UX, Linux and Windows.  It should run everywhere Matlab runs.
+ To run in NT currently requires launching  each Matlab session by hand.
+
+-MatlabMPI has been benchmarked on SGI, Sun, HP, IBM and Intel
+ systems and achieves expected hardware limits with the exception of
+ Linux due to the poor implementation of NFS in Linux.  This problem is
+ currently being addressed by the Linux community.

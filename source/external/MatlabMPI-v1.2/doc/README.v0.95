@@ -1,0 +1,23 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+WHAT'S NEW IN VERSION 0.9x
+
+-Added documentation.  Typing "help MatlabMPI" produces
+ a list of all the functions in the library. Typing
+ "help function_name" gives info on the function.
+
+-Added MatMPI_Comm_settings which allow users to customize
+ internals of MatlabMPI operation (rsh vs. ssh, ...).
+
+-Added unit_test and unit_test_all scripts to do automatic
+ regression testing.
+
+-Added MatMPI_Save_messages which prevents messages from being
+ deleted (useful for debugging, also useful to accelerate
+ MPI_Bcast).
+

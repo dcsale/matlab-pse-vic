@@ -1,0 +1,44 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+TO DO LIST
+
+-Demonstrate an interactive server.
+  examples/server
+    server.m
+      rank~=0 spins on eval(MPI_Recv())
+      increments tag each time a message is received
+    multEval('command',ranks)
+      sends command to ranks, default is everyone.
+    var = getVar('VarName',ranks)
+      multEval('MPI_Send(comm,0,tag,'VarName')');
+    putVar('VarName',ranks)
+      sends two messages
+        MPI_Send(comm,dest,tag+1,'VarName')
+      multEval('VarName = MPI_Recv(comm,source,tag+1)')
+
+-Explore performance benefits of using a Ram disk
+
+-Eliminate need for user managed tags by keeping track
+ inside comm.
+  -Comm keeps a list of recv and send counts for each
+   processor and each tag.  Increments after save/load. 
+  -Drawback: requires that comm holds state info,
+   lack of pointers or rhs modification means a fundamental
+   change to syntax:
+      [comm] = MPI_Send(comm, ...);
+      [comm, vars] = MPI_Recv(comm, ...);
+   or use of globals, which also changes syntax.
+   Implication: every line of MatlabMPI code will need
+   modification.  Also limits to tags to fixed number of
+   integers.
+   Recommendation: do not implement.
+
+-Allow comm scoping?  Only makes sense if doing tag
+ management (see above).  Limiting tags to integers
+ prevents user scoping and is incompatible with pMatlab.
+   Recommendation: do not implement.

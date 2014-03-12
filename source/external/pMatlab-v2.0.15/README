@@ -1,0 +1,235 @@
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%         pMatlab: Parallel Matlab Toolbox v2.0a        %%
+  %% Software Engineer: Ms. Nadya Travinin (nt@ll.mit.edu) %%
+  %% Architect: Dr. Jeremy Kepner (kepner@ll.mit.edu)      %% 
+  %%                  MIT Lincoln Laboratory               %%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+REQUEST TO ALL USERS: Please read all of this 7 page manual (especially
+the section on ERROR HANDLING) before starting to use pMatlab.
+
+It is also helpful to read the 7 page MatlabMPI manual (see see
+pMatlab/MatlabMPI/README)
+
+PC users should read the 1 page manual for running MatlabMPI on a PC
+(see pMatlab/MatlabMPI/README.pc)
+
+Additional documentation on how to write well performing parallel
+Matlab programs can be found in the book:
+
+  Parallel MATLAB for Multicore and Multinode Systems
+  by Jeremy Kepner, SIAM Press, 2009
+  http://www.siam.org/KepnerBook
+
+INTRODUCTION
+
+  Matlab is the dominate programming language for implementing numerical
+computations and is widely used for algorithm development, simulation,
+data reduction, testing and system evaluation.  Many of these
+computations could benefit from faster execution on a parallel computer.
+There have been many previous attempts to provide an efficient mechanism
+for running Matlab programs on parallel computers.  pMatlab provides
+a set of Matlab data structures and functions that implement distributed
+Matlab arrays.  Parallel array programming has proven to be an
+effective programming style for a wide variety of parallel applications
+and is consistent with standard Matlab programming style.  The primary
+advantages of distributed array programming are:
+  -Message passing is done implicitly
+  -Existing Matlab program can be made parallel with modifications
+   to a handful of statements
+
+REQUIREMENTS
+ pMatlab uses MatlabMPI for launching programs and communicating
+between processors and thus has the following requirements
+
+  -Matlab license (or equivalent open source clone, e.g. Octave).
+  -File system visible to all processors
+
+  On shared memory systems, pMatlab only requires a single Matlab
+license as each user is allowed to have many Matlab sessions. On distributed
+memory systems, pMatlab will require one Matlab license per machine.
+Because MatlabMPI uses file i/o for communication, there must be a
+directory that is visible to every machine (this is usually also
+required in order to install Matlab).  This directory defaults to the
+directory that the program is launched from, but can be changed when
+you launch your pMatlab program.
+
+INSTALLING AND RUNNING:
+
+  - Unpack pMatlab directory into a location that is visible
+    to all computers.
+
+  - Modify paths and add contents of pMatlab/startup.m to your
+    ~/matlab/startup.m file.  If you want to run using The Mathworks
+    PCT you should uncomment the corresponding line to enable
+    this functionality.
+
+  - PC users should also add
+       addpath .\MatMPI
+    please see pMatlab/MatlabMPI/README.pc for more info.
+
+  - OPTIONAL: You may need to read and edit
+         pMatlab/MatlabMPI/src/MatMPI_Comm_settings.m
+    to customize the behavior MatlabMPI for your system.
+
+  - Start Matlab from the command line (starting Matlab
+    from the icon may result in inconsistent behavior).
+
+  - Type "help pMatlab" to get a list of all the functions.
+
+  - Type "help function_name" to get more info on a specific function.
+
+  - Go to the "Examples/Mandelbrot" directory and type
+    eval(pRUN('pMandelbrot',2,{})) to run the 
+    first example, which computes and displays the Mandebrot set.
+
+  - Look at MatMPI/*.out to view the output from each of the 
+    processors involved in the computation.
+
+  - The same procedure can be followed to run any of the examples.
+
+  - To run all of the examples, go to the "Examples/TestAll"
+    directory and type "RUN" (edit the pTestAll.m file if you
+    want to just run a subset of the examples):
+
+
+       AddOne/pAddOne.m
+         Simple program that performance Y = X + 1.
+       Mandelbrot/pMandelbrot.m
+         Computes Mandelbrot set.
+       ZoomImage/pZoomImage.m
+         Zooms in on an image.
+       IO/pIO.m
+         Demonstrate parallel file IO.
+       Blurimage/pBlurimage.m
+         Convolves an image.
+       Beamformer/pBeamformer.m
+         Beamforms sensor data.
+       Speedtest/pSpeedtest.m
+         Tests message passing peformance.
+       Stream/pStream.m
+         HPC Challenge Stream benchmark.
+       RandomAccess/pRandomAccess.m
+         HPC Challenge RandomAccess benchmark.
+       FFT/pFFT.m
+         HPC Challenge FFT benchmark.
+       HPL/pHPL.m
+         HPC Challenge High Perfmance Linpack (HPL) benchmark.
+       TestAll/pTestAll.m
+         Runs all of the above examples.
+
+  - To run using a different number of processors,
+    change the "Ncpus" variable in Examples/TestAll/RUN.m.  All of the
+    examples should run with up to 8 processors.
+
+  - To select which machines to run on change the "machines"
+    variable in Examples/TestAll/RUN.m.  The machines variable can
+    be of the following form:
+
+       machines = {};
+         Run on a local processor.
+
+      machines = {'machine1' 'machine2'}) );
+         Run on multiprocessors.
+
+      machines = {'machine1:dir1' 'machine2:dir2'}) );
+        Run on multiprocessors and communicate via dir1 and dir2,
+        which must be visible to both machines.
+
+ERROR HANDLING
+  pMatlab handles errors in the following manner.
+
+1. pRUN automatically appends an "exit" statement to any scripts
+it runs.  If an error is encountered  all the Matlab processes
+should die gracefully.  All error logs should be recorded in files
+MatMPI/*.out.
+
+2. If a Matlab job is waiting for a message that will never arrive, then
+you will have to kill it by hand by starting a new Matlab session and
+typing:
+
+  MPI_Abort
+
+If this doesn't work, you will need to log into each machine, type
+"top" and kill the Matlab processes one by one.  NOTE: pRUN automatically
+executes MPI_Abort before running the next job.
+
+3. MatlabMPI can leave a variety of files lying around, which are best
+to delete once an error has occurred by starting Matlab and typing:
+
+  MatMPI_Delete_all
+
+If this doesn't work, you can delete the files by hand. The files can be
+found in two places -  the launching directory and the communication
+directory (which by default are the same place).  NOTE: pRUN automatically
+executes MatMPI_Delete_all before running the next job.
+
+In the launch directory you may have leftover files that look like:
+
+        MatMPI/*
+In the communication directory you may have leftover files that look like:
+
+        p<rank>_p<rank>_t<tag>_buffer.mat
+        p<rank>_p<rank>_t<tag>_lock.mat
+
+It is very important that you delete these files.  In general, if you
+are using a public directory to do communication (e.g.; /tmp), you should
+create a subdirectory first (e.g.; /tmp/joe) and use this directory
+for communication.
+
+
+FILES
+
+  Description of files/directories:
+
+  README            This file.
+  startup.m         Edit and past into your ~/matlab/startup.m
+  disclaimer        Disclaimer.
+  doc/              Additonal documentation on pMatlab
+  Examples/         Directory containing examples and benchmark programs.
+  src/              pMatlab source files
+  MatlabMPI/        MatlabMPI library directory (see MatlabMPI/README)
+  PCTstubs/         Functions for lauching on top of Mathworks PCT.
+
+  doc/
+    pMatlab_into.pdf           Introduction to Parallel Programming and pMatlab.
+    pMatlab_param_sweep.pdf    Writing Parameter Sweep Applications with pMatlab.
+    pMatlab_v1.0_func_ref.pdf  pMatlab Function Reference.
+    pMatlabProgramming.ppt     Overview of distributed array concepts.
+
+  src/
+    see contents.m for a description of all functions or
+    type "help pMatlab"
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Copyright (c) 2005-2009, Massachusetts Institute of Technology           %
+%All rights reserved.                                                     %
+%                                                                         %
+%Redistribution and use in source and binary forms, with or without       %
+%modification, are permitted provided that the following conditions are   %
+%met:                                                                     %
+%     * Redistributions of source code must retain the above copyright    %
+%       notice, this list of conditions and the following disclaimer.     %
+%     * Redistributions in binary form must reproduce the above copyright %
+%       notice, this list of conditions and the following disclaimer in   %
+%       the documentation and/or other materials provided with the        %
+%       distribution.                                                     %
+%     * Neither the name of the Massachusetts Institute of Technology nor %
+%       the names of its contributors may be used to endorse or promote   %
+%       products derived from this software without specific prior written% 
+%       permission.                                                       %
+%                                                                         %
+%THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS  %
+%IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,%
+%THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR   %
+%PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR         %
+%CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,    %
+%EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,      %
+%PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR       %
+%PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   %
+%LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     %
+%NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       %
+%SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

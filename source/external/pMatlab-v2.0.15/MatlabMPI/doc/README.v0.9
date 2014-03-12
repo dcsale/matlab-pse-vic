@@ -1,0 +1,18 @@
+            *******************************************
+            *** Parallel Programming with MatlabMPI ***
+            ***         Dr. Jeremy Kepner           ***
+            ***      MIT Lincoln Laboratory         ***
+            ***        kepner@ll.mit.edu            ***
+            *******************************************
+
+WHAT'S NEW IN VERSION 0.9
+
+-Completely reworked underlying infrastructure to add
+ a host of new features such as MPI_Abort and MatMPI_Delete_all.
+
+-Can now have different communication directories for each node,
+ for example:
+
+        MPI_Run('myscript',2,{'machine1:dir1' 'machine2:dir2'} )
+
+-Added MPI_Probe command to check for incoming messages.
