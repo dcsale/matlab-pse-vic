@@ -28,7 +28,7 @@
 % Simulation Parameters
 % ========================================================================%
 % SIM.outputDir           = 'C:\Users\Danny\Desktop\simulation_output\METS-2014\VortexInCell - test - 1';
-SIM.outputDir           = '/home/danny/simulation_output/VortexInCell - test - 1';
+SIM.outputDir           = '/home/danny/workspace/simulation_output/VortexInCell-test-1';
 SIM.example             = 'VIC';                % current options are: 'VortexRings', 'Turbine', "VIC'
 SIM.DEBUG_LVL           = 8999;                 % setting a debug level > 0 shows additional output.  If you go over 9000 the profiler is enabled.
 SIM.writeParticles      = true;
@@ -67,7 +67,7 @@ SIM.alpha     = 2;
 SIM.testcase = 2;
 
 %% algorithm selection for P2P, P2M, and RHS evaluations
-SIM.numProc     = 4;        % number of CPU cores to use for parallel algorithms
+SIM.numProc     = 1;        % number of CPU cores to use for parallel algorithms
 SIM.runMode_P2P = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2', 'CPU-v3', 'GPU-v1', 'GPU-v2'
 SIM.runMode_RHS = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2', 'CPU-v3', 'GPU-v1', 'GPU-v2'
 SIM.runMode_P2M = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2',           'GPU-v1', 'GPU-v2'

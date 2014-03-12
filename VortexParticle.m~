@@ -143,7 +143,8 @@ switch SIM.example
 %         NX = [160];
 %         NX = [32 64 128 144];
 %         NX = [32 64 128 256];
-        NX = [64 128 256 384]; % 512 is too big and uses 64GB + 12GB+ swap
+%         NX = [64 128 256 384]; % 512 is too big and uses 64GB + swap
+        NX = [64 128 256 288 320]; % 384 is too big and uses 64GB + swap
         
         for n = 1:numel(NX)
            MESH.NX = [NX(n), NX(n), NX(n)];

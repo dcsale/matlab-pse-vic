@@ -36,12 +36,12 @@ end
 copyfile([SIM.inpFile],[SIM.outputDir filesep SIM.caseName '_echo' SIM.inpExt])
 
 %% Setup parallel computing stuff
-if strcmp(SIM.runMode_P2P,'CPU-v1') || strcmp(SIM.runMode_P2M,'CPU-v1')
+% if strcmp(SIM.runMode_P2P,'CPU-v1') || strcmp(SIM.runMode_P2M,'CPU-v1')
+if SIM.numProc <= 1  
     matlabpool close force local
 else
-%     gpuDevice
     poolSize = matlabpool('size');  % check to see if a pool is already open
-    if poolSize == 0 || poolSize < SIM.numProc
+    if poolSize == 0 || poolSize < SIM.numProc || poolSize ~= SIM.numProc
         matlabpool close force local
         eval(['matlabpool open ' num2str(SIM.numProc)])
     end

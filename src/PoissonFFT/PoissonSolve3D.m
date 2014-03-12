@@ -29,7 +29,10 @@ function field_out = PoissonSolve3D(vort, Mesh, Sim)
 %*               
 %**************************************************************************
 
-% tic
+do_timing = true;
+if do_timing
+    tic
+end
 
 %----------------------------------------------------------------------
 % Fourier transform vorticity field
@@ -181,12 +184,14 @@ else
     field_out = vel;
 end
 
-% user = memory;
-% mem  = user.MemUsedMATLAB;
-% Mesh.NX 
-% toc 
-% mem/1e9
-% memory
+if do_timing
+%     user = memory;
+%     mem  = user.MemUsedMATLAB;
+    Mesh.NX 
+    toc 
+%     mem/1e9
+%     memory
+end
 
 end % function PoissonSolve3D
 
