@@ -1,16 +1,12 @@
-function [SIM, ENV, PART, MESH] = VortexParticle_Init(inputFile)
+function [SIM, ENV, MESH] = VortexParticle_Init(inputFile)
 
 %% set program version
 SIM.version = 'VortexParticle-alpha';
 
-%% read the input file
+%% read/evaluate the input file variables into workspace
 [~, SIM.caseName, SIM.inpExt] = fileparts(inputFile);
-if isdeployed
-%     parseInputFile(SIM.inpFile)    % NOTE: not implemented yet
-else
-    run(inputFile)
-end
-
+run(inputFile)
+       
 %% Define the files in the solution path
 SIM.rootDir             = pwd;
 SIM.inpFile             = [SIM.rootDir filesep SIM.caseName SIM.inpExt];

@@ -1,5 +1,5 @@
 % function [field_out] = PoissonSolve3D(vort, NX, Mesh.k, fieldxf_ext, kernel, solve_vel, runTests)
-function field_out = PoissonSolve3D(vort, Mesh, Sim)
+function field_out = PoissonSolve3D(vort, Mesh, Sim, varargin)
 %**************************************************************************
 %*
 %* Program:      PoissonSolve3D.m
@@ -28,10 +28,11 @@ function field_out = PoissonSolve3D(vort, Mesh, Sim)
 %*               * renamed some variables to clarify field and coordinates
 %*               
 %**************************************************************************
-
-do_timing = true;
-if do_timing
+if nargin > 3
+    do_timing = true;
     tic
+else
+    do_timing = false;
 end
 
 %----------------------------------------------------------------------

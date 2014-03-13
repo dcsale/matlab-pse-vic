@@ -1,4 +1,4 @@
-function wp = interp_M2P(MESH, xp, wf, varargin)
+function wp = interp_M2P(PART, MESH, xp, wf, varargin)
 %% =======================================================================%
 % assign particle strengths through the M2P interpolation
 % ========================================================================%
@@ -25,10 +25,10 @@ xf = MESH.x{1};
 yf = MESH.x{2};
 zf = MESH.x{3};
 
-nPart = size(xp, 2);
-wp_x = zeros(1, nPart);
-wp_y = zeros(1, nPart);
-wp_z = zeros(1, nPart);
+nPart = size(xp, 
+wp_x = zeros(1, PART.nPart);
+wp_y = zeros(1, PART.nPart);
+wp_z = zeros(1, PART.nPart);
 
 wf_x = wf{1};
 wf_y = wf{2};
@@ -36,8 +36,8 @@ wf_z = wf{3};
 
 isupport = 2;
 
-parfor p = 1:nPart  
-% for p = 1:nPart  
+parfor p = 1:PART.nPart  
+% for p = 1:PART.nPart  
         
             %% loop over all the mesh points only within support
             sx = abs( xp_x(p) - xf ) ./ dx; 
@@ -73,7 +73,7 @@ wp_x(p) = wp_sum(1);
 wp_y(p) = wp_sum(2);
 wp_z(p) = wp_sum(3);
 
-% fprintf(1,'[interp_M2P.m] particle %g of %g. \n', p, nPart);
+% fprintf(1,'[interp_M2P.m] particle %g of %g. \n', p, PART.nPart);
 end
 
 wp = [wp_x; wp_y; wp_z];

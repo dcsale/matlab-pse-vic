@@ -1,0 +1,34 @@
+function [xp, wp, PART] = remesh_particles(PART, MESH, wf)
+%% ideas
+% could also use this function to creat particles inbetween a min and max
+% value, for example, could be used to create particle isosurfaces !
+
+%% =======================================================================%
+% create the particle locations at the nodes within vorticity support, plus
+% some additional padding (ghost particles?)
+% ========================================================================%
+wf_mag     = sqrt(wf{1}.^2 + wf{2}.^2 + wf{3}.^2);
+tol        = 1e-4;                          % NOTE: should be function input and part of SIM structure
+ii         = wf_mag > tol;                  % indicies where field is greater than tolerance
+PART.nPart = sum(sum(sum(ii)));             % number of particles
+PART.hp    = SIM.h_cutoff * MESH.dx(1);    % a smoothing radius (i.e., a cutoff length or core size)
+
+xp      = zeros(3, PART.nPart);             % init the particles
+
+
+
+
+switch MESH.type
+    case 'collocated'
+        xp(1,:) = MESH.xf(ii);                      % create particles at the nodes
+        xp(2,:) = MESH.yf(ii);
+        xp(3,:) = MESH.zf(ii);
+    case 'staggered'
+        
+    otherwise
+        error('unrecognized type of mesh')
+end
+
+wp = interp_M2P(PART, MESH, xp, wf);   % init particle weights
+
+end % init_particle_pos

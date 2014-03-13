@@ -19,4 +19,8 @@ xp(3,:)    = MESH.zf(ii);
 % xp(2,:)    = MESH.yf(ii);
 % xp(3,:)    = MESH.zf(ii);
 
+%% particle parameters
+% PART.hp = PART.h_cutoff * MESH.dx(1); % a smoothing radius (i.e., a cutoff length or core size)
+
+
 end % init_particle_pos
