@@ -29,12 +29,7 @@ if ~isdeployed
 end
 
 % Set debug break points
-% dbstop in induce_vel_gpu_v1.m at 1
-% dbstop init_vortexRing.m 
-dbstop in VortexParticle at 99
-% dbstop in interp_M2P at 1
-% dbstop in PoissonSolve3D at 63
-% dbstop in vel_P2M_reg at 150
+dbstop in vic at 99
 % dbstop if error
 
 %% =======================================================================%
@@ -103,7 +98,8 @@ switch SIM.example
            uf             = PoissonSolve3D(SIM, MESH, wf);      % solve Poisson eqn for velocity
            % compute vortex stretching on mesh (finite differences)
            wf_str = vortex_stretch(SIM, MESH, wf, uf);
-           wp = wp + interp_M2P(MESH, xp, wf_str);              % interpolate vortex stretching from mesh to the particles as a change of vorticity
+           wp2 = wp + interp_M2P(MESH, xp, wf_str);              % interpolate vortex stretching from mesh to the particles as a change of vorticity
+           plot_particles(xp, wp2, MESH, 'Particle Vorticity')
            
            % compute diffusion on mesh (finite differences)
            % look into the del2 to compute the discrete Laplacian

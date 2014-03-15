@@ -98,7 +98,9 @@ switch SIM.example
            uf             = PoissonSolve3D(SIM, MESH, wf);      % solve Poisson eqn for velocity
            % compute vortex stretching on mesh (finite differences)
            wf_str = vortex_stretch(SIM, MESH, wf, uf);
-           wp = wp + interp_M2P(MESH, xp, wf_str);              % interpolate vortex stretching from mesh to the particles as a change of vorticity
+           wp_str = interp_M2P(MESH, xp, wf_str);              % interpolate vortex stretching from mesh to the particles
+           wp = wp + wp_str;                                   % update the particle weights
+           plot_particles(xp, wp2, MESH, 'Particle Vorticity')
            
            % compute diffusion on mesh (finite differences)
            % look into the del2 to compute the discrete Laplacian
