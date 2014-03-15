@@ -1,7 +1,7 @@
 function [SIM, ENV, MESH] = VortexParticle_Init(inputFile)
 
 %% set program version
-SIM.version = 'VortexParticle-alpha';
+SIM.version = 'vic-alpha';
 
 %% read/evaluate the input file variables into workspace
 [~, SIM.caseName, SIM.inpExt] = fileparts(inputFile);

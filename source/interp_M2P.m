@@ -34,7 +34,7 @@ wf_x = wf{1};
 wf_y = wf{2};
 wf_z = wf{3};
 
-isupport = 2;
+isupport = 2; % NOTE: this should not be hard coded, but depends on the selected interpolation kernel
 
 parfor p = 1:nPart  
 % for p = 1:nPart  
@@ -60,15 +60,11 @@ parfor p = 1:nPart
             for i = ai:bi
                 for j = aj:bj
                     for k = ak:bk 
-                        W      = interp_kernel([sx(i); ...
-                                               sy(j); ...
-                                               sz(k)]);
-%                         wp_sum = wp_sum + W .* [wf{1}(i,j,k); wf{2}(i,j,k); wf{3}(i,j,k)];
+                        W      = interp_kernel([sx(i); sy(j); sz(k)]);
                         wp_sum = wp_sum + W .* [wf_x(i,j,k); wf_y(i,j,k); wf_z(i,j,k)];
                     end
                 end
             end
-
 wp_x(p) = wp_sum(1);
 wp_y(p) = wp_sum(2);
 wp_z(p) = wp_sum(3);
@@ -76,12 +72,14 @@ wp_z(p) = wp_sum(3);
 % fprintf(1,'[interp_M2P.m] particle %g of %g. \n', p, nPart);
 end
 
+%% collect the output
 wp = [wp_x; wp_y; wp_z];
 
+%% Benchmarking
 if do_timing
 %     user = memory;
 %     mem  = user.MemUsedMATLAB;
-    Mesh.NX 
+    MESH.NX 
     toc 
 %     mem/1e9
 %     memory

@@ -98,11 +98,20 @@ switch SIM.example
         
            MESH           = init_mesh(SIM, MESH);               % init mesh
            wf             = init_field(SIM, MESH);              % init vorticity field
-%            wf             = interp_P2M(MESH, xp, wp);           % init vorticity field by interpolation from particles (P2M)
+
 
            [xp, wp, PART] = remesh_particles(SIM, MESH, wf);    % remesh the field onto new particles
-           uf             = PoissonSolve3D(wf, MESH, SIM);      % solve Poisson eqn for velocity
+%            wf             = interp_P2M(MESH, xp, wp);           % init vorticity field by interpolation from particles (P2M)
+           wf2             = interp_P2M(MESH, xp, wp, 'timing');           % init vorticity field by interpolation from particles (P2M)
+            dwf_x = abs( wf{1} - wf2{1} );
+            dwf_y = abs( wf{2} - wf2{2} );
+            dwf_z = abs( wf{3} - wf2{3} );
+            dwf   = {dwf_x; dwf_y; dwf_z};
+            plot_field(dwf, MESH, 'Vorticity Field')
+            
+           uf             = PoissonSolve3D(SIM, MESH, wf);      % solve Poisson eqn for velocity
            % compute vortex stretching on mesh (finite differences)
+           wf_str = vortex_stretch(SIM, MESH, wf, uf);
            wp = wp + interp_M2P(MESH, xp, wf_str);              % interpolate vortex stretching from mesh to the particles as a change of vorticity
            % move (advect) the particles with the velocity and update thier positions (particle volumes unchanged since advection is incompressible)
            

@@ -1,5 +1,5 @@
 % function [field_out] = PoissonSolve3D(vort, NX, Mesh.k, fieldxf_ext, kernel, solve_vel, runTests)
-function field_out = PoissonSolve3D(vort, Mesh, Sim, varargin)
+function field_out = PoissonSolve3D(Sim, Mesh, vort, varargin)
 %**************************************************************************
 %*
 %* Program:      PoissonSolve3D.m

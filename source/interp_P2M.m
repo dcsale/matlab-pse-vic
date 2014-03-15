@@ -1,4 +1,7 @@
 function wf = interp_P2M(MESH, xp, wp, varargin)
+%% =======================================================================%
+% assign particle strengths through the P2M interpolation
+% ========================================================================%
 
 if nargin > 3
     do_timing = true;
@@ -8,54 +11,48 @@ else
 end
 
 % some temp variables
-dim  = numel(MESH.dx);
-% x    = MESH.x;
-% nx   = MESH.NX;
-% dx   = MESH.dx;
-% xmin = MESH.xmin;
-% xmax = MESH.xmax;
-
-%% =======================================================================%
-% assign particle strengths through the M2P interpolation
-% ========================================================================%
-% wp = zeros(3, nPart);
-% wp = distributed.zeros(3, nPart);
-
-dx = MESH.dx(1);
-dy = MESH.dx(2);
-dz = MESH.dx(3);
-
-
-
-xf = MESH.x{1};
-yf = MESH.x{2};
-zf = MESH.x{3};
-
-wf    = cell(dim, 1);
-wf{1} = zeros(Mesh.NX);
-wf{2} = zeros(Mesh.NX);
-wf{3} = zeros(Mesh.NX);
+% dim  = numel(MESH.dx);
+% xMin = MESH.xmin(1);
+% yMin = MESH.xmin(2);
+% zMin = MESH.xmin(3);
 
 nPart = size(xp, 2);
 xp_x  = xp(1,:);
 xp_y  = xp(2,:);
 xp_z  = xp(3,:);
-wp_x  = zeros(1, nPart);
-wp_y  = zeros(1, nPart);
-wp_z  = zeros(1, nPart);
+wp_x  = wp(1,:);
+wp_y  = wp(2,:);
+wp_z  = wp(3,:);
 
-wf_x = wf{1};
-wf_y = wf{2};
-wf_z = wf{3};
+xf = MESH.x{1};
+yf = MESH.x{2};
+zf = MESH.x{3};
 
-% r_x = zeros(1, numel(nx(1)));
-% r_y = zeros(1, numel(nx(2)));
-% r_z = zeros(1, numel(nx(3)));
+% Nx = MESH.NX(1);
+% Ny = MESH.NX(2);
+% Nz = MESH.NX(3);
 
-isupport = 2;
+dx = MESH.dx(1);
+dy = MESH.dx(2);
+dz = MESH.dx(3);
 
-parfor p = 1:nPart  
-% for p = 1:nPart  
+% wf    = cell(dim, 1);
+% wf{1} = zeros(MESH.NX);
+% wf{2} = zeros(MESH.NX);
+% wf{3} = zeros(MESH.NX);
+% wf_x  = wf{1};
+% wf_y  = wf{2};
+% wf_z  = wf{3};
+wf_x = zeros(MESH.NX);
+wf_y = zeros(MESH.NX);
+wf_z = zeros(MESH.NX);
+
+isupport = 2; % NOTE: this should not be hard coded, but depends on the selected interpolation kernel
+
+%% version 1
+% 
+% parfor p = 1:nPart  
+for p = 1:nPart  
         
             %% loop over all the mesh points only within support
             sx = abs( xp_x(p) - xf ) ./ dx; 
@@ -74,73 +71,29 @@ parfor p = 1:nPart
             ak = find(sz <= isupport, 1, 'first');           
             bk = find(sz <= isupport, 1, 'last');
             
-            wp_sum = zeros(dim, 1);
             for i = ai:bi
                 for j = aj:bj
                     for k = ak:bk 
-                        W      = interp_kernel([sx(i); ...
-                                               sy(j); ...
-                                               sz(k)]);
-%                         wp_sum = wp_sum + W .* [wf{1}(i,j,k); wf{2}(i,j,k); wf{3}(i,j,k)];
-                        wp_sum = wp_sum + W .* [wf_x(i,j,k); wf_y(i,j,k); wf_z(i,j,k)];
+                        W           = interp_kernel([sx(i); sy(j); sz(k)]);
+                        wf_x(i,j,k) = wf_x(i,j,k) + W*wp_x(p);
+                        wf_y(i,j,k) = wf_y(i,j,k) + W*wp_y(p);
+                        wf_z(i,j,k) = wf_z(i,j,k) + W*wp_z(p);
                     end
                 end
             end
-%             r   = [r_x; r_y; r_z];
-%             r         = [xp(1,p) - x{1}; 
-%                          xp(2,p) - x{2}; 
-%                          xp(3,p) - x{3}];
-%             r         = abs(r);
-%             r(1,:)    = r(1,:) ./ dx(1);
-%             r(2,:)    = r(2,:) ./ dx(2);
-%             r(3,:)    = r(3,:) ./ dx(3);
-%             r_support = r <= 2;
-%             ai = find(support(1,:), 1, 'first');
-%             aj = find(support(2,:), 1, 'first');
-%             ak = find(support(3,:), 1, 'first');
-%             bi = find(support(1,:), 1, 'last');
-%             bj = find(support(2,:), 1, 'last');
-%             bk = find(support(3,:), 1, 'last');
-%             wp_sum = [0; 0; 0];
-%             for i = ai:bi
-%                 for j = aj:bj
-%                     for k = ak:bk                        
-% %                         xf = xmin(1) + (i-1)*dx(1);
-% %                         yf = xmin(2) + (j-1)*dx(2);
-% %                         zf = xmin(3) + (k-1)*dx(3);
-% % 
-% %                         r      = [xp(1,p) - xf; 
-% %                                   xp(2,p) - yf; 
-% %                                   xp(3,p) - zf];
-% %                         r      = abs(r);
-% %                         r(1,:) = r(1,:) ./ dx(1);
-% %                         r(2,:) = r(2,:) ./ dx(2);
-% %                         r(3,:) = r(3,:) ./ dx(3);
-%                         W      = interp_kernel([s]);
-% %                         W      = interp_kernel(r);
-%                         wp_sum = wp_sum + W .* [wf{1}(i,j,k); wf{2}(i,j,k); wf{3}(i,j,k)];   
-%                     end
-%                 end
-%             end
-
     
-%     wp(1,p) = wp_sum(1);
-%     wp(2,p) = wp_sum(2);
-%     wp(3,p) = wp_sum(3);
-    wp_x(p) = wp_sum(1);
-    wp_y(p) = wp_sum(2);
-    wp_z(p) = wp_sum(3);
-    
-%     fprintf(1,'[interp_M2P.m] particle %g of %g. \n', p, nPart);
+%     fprintf(1,'[interp_P2M.m] particle %g of %g. \n', p, nPart);
 
 end
+ 
+%% collect the output
+wf = {wf_x; wf_y; wf_z};
 
-wp = [wp_x; wp_y; wp_z];
-
+%% for benchmarking
 if do_timing
 %     user = memory;
 %     mem  = user.MemUsedMATLAB;
-    Mesh.NX 
+    MESH.NX 
     toc 
 %     mem/1e9
 %     memory
