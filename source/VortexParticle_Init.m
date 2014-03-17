@@ -1,4 +1,4 @@
-function [SIM, ENV, MESH] = VortexParticle_Init(inputFile)
+function [SIM, ENV, MESH, CTRL] = VortexParticle_Init(inputFile)
 
 %% set program version
 SIM.version = 'vic-alpha';

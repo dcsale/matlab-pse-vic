@@ -1,8 +1,25 @@
 function plot_particles(xp, wp, MESH, tag)
 
+if isempty(wp)
+    % can only plot the particle positions
+    figure
+    set(gcf,'name', tag, 'numbertitle', 'off') 
+    
+    plot3(xp(1,:), xp(2,:), xp(3,:), '.k')
+    axis equal
+    axis([MESH.xmin(1) MESH.xmax(1) ...
+          MESH.xmin(2) MESH.xmax(2) ...
+          MESH.xmin(3) MESH.xmax(3)]);
+    xlabel('x')
+    ylabel('y')
+    zlabel('z')
+    
+    return
+end
+
+%% Plot particle weights
 wp_mag = sqrt( wp(1,:).^2 + wp(2,:).^2 + wp(3,:).^2 );
 
-%% Particle quantity
 figure
 set(gcf,'name', tag, 'numbertitle', 'off') 
 

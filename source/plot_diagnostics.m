@@ -1,12 +1,22 @@
-function plot_diagnostics(SIM, MESH, PART, xp, wp, wf, uf)
+function plot_diagnostics(SIM, MESH, PART, time, cycle, xp, wp, wf, uf, up)
 %Make some plots, showing diagnostics of the vortex method
 
 %% plot the fields and particles for basic visualization
-plot_field(wf, MESH, 'Vorticity Field')
-plot_field(uf, MESH, 'Velocity Field')
-plot_particles(xp, wp, MESH, 'Particle Vorticity')
-plot_particles(xp, up, MESH, 'Particle Velocity')
-
+if ~isempty(wf)
+    plot_field(wf, MESH, 'Vorticity Field')
+end
+if ~isempty(uf)
+    plot_field(uf, MESH, 'Velocity Field')
+end
+if ~isempty(xp)
+    plot_particles(xp, [], MESH, 'Particle Positions')
+end
+if ~isempty(wp) && ~isempty(xp)
+    plot_particles(xp, wp, MESH, 'Particle Vorticity')
+end
+if ~isempty(up) && ~isempty(xp)
+    plot_particles(xp, up, MESH, 'Particle Velocity')
+end
 
 %% =======================================================================%
 % plot the divergence of the fields

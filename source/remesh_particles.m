@@ -25,10 +25,10 @@ switch type
     case 'staggered'
         % create particles at cell centers
 %         wf_cen  = interp_M2M(SIM, MESH, MESH);
-        xp(1,:) = MESH.xf_cen(ii);
-        xp(2,:) = MESH.yf_cen(ii);
-        xp(3,:) = MESH.zf_cen(ii);      
-        wp      = interp_M2P(MESH, xp, wf_cen);   % init weights by interpolating the field
+%         xp(1,:) = MESH.xf_cen(ii);
+%         xp(2,:) = MESH.yf_cen(ii);
+%         xp(3,:) = MESH.zf_cen(ii);      
+%         wp      = interp_M2P(MESH, xp, wf_cen);   % init weights by interpolating the field
     otherwise
         error('unrecognized type of mesh')
 end

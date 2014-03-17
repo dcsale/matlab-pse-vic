@@ -22,20 +22,22 @@ if ~isdeployed
     addpath([dir_ext filesep 'consolidator'])
     addpath([dir_ext filesep 'interparc'])
     addpath([dir_ext filesep 'plot3k'])
+    addpath([dir_ext filesep 'ODE_Solvers'])
 %     addpath([dir_ext filesep 'write_VTK'])
-%     addpath([dir_ext filesep 'write_VTK' filesep 'vtk_writers'])
+    addpath([dir_ext filesep 'write_VTK' filesep 'vtk_writers'])
 %     addpath([dir_ext filesep 'write_VTK' filesep 'vtk_writers' filesep 'VtkWriter-0.1'])
 %     addpath([dir_ext filesep 'MOSAIC'])
 end
 
 % Set debug break points
-dbstop in vic at 99
-% dbstop if error
+% dbstop in vic at 110
+% dbstop in case_vortexRings at 1
+dbstop if error
 
 %% =======================================================================%
 % Initialize part 1
 % ========================================================================%
-[SIM, ENV, MESH] = VortexParticle_Init(inputFile);
+[SIM, ENV, MESH, CTRL] = VortexParticle_Init(inputFile);
 
 % if SIM.DEBUG_LVL > 0
 %     % check the number of particles and ask for permission to continue
@@ -50,74 +52,14 @@ dbstop in vic at 99
 % Initialize part 2
 % ========================================================================%                      
 switch SIM.example
-    
-        case 'VIC'
-        % @@@@@@@@@@@@@@@@@@@@@**^^""~~~"^@@^*@*@@**@@@@@@@@@
-        % @@@@@@@@@@@@@*^^'"~   , - ' '; ,@@b. '  -e@@@@@@@@@
-        % @@@@@@@@*^"~      . '     . ' ,@@@@(  e@*@@@@@@@@@@
-        % @@@@@^~         .       .   ' @@@@@@, ~^@@@@@@@@@@@
-        % @@@~ ,e**@@*e,  ,e**e, .    ' '@@@@@@e,  "*@@@@@'^@
-        % @',e@@@@@@@@@@ e@@@@@@       ' '*@@@@@@    @@@'   0
-        % @@@@@@@@@@@@@@@@@@@@@',e,     ;  ~^*^'    ;^~   ' 0
-        % @@@@@@@@@@@@@@@^""^@@e@@@   .'           ,'   .'  @
-        % @@@@@@@@@@@@@@'    '@@@@@ '         ,  ,e'  .    ;@
-        % @@@@@@@@@@@@@' ,&&,  ^@*'     ,  .  i^"@e, ,e@e  @@
-        % @@@@@@@@@@@@' ,@@@@,          ;  ,& !,,@@@e@@@@ e@@
-        % @@@@@,~*@@*' ,@@@@@@e,   ',   e^~^@,   ~'@@@@@@,@@@
-        % @@@@@@, ~" ,e@@@@@@@@@*e*@*  ,@e  @@""@e,,@@@@@@@@@
-        % @@@@@@@@ee@@@@@@@@@@@@@@@" ,e@' ,e@' e@@@@@@@@@@@@@
-        % @@@@@@@@@@@@@@@@@@@@@@@@" ,@" ,e@@e,,@@@@@@@@@@@@@@
-        % @@@@@@@@@@@@@@@@@@@@@@@~ ,@@@,,0@@@@@@@@@@@@@@@@@@@
-        % @@@@@@@@@@@@@@@@@@@@@@@@,,@@@@@@@@@@@@@@@@@@@@@@@@@    
-        
-            % The simulation algorithm thus proceeds as follows:
-                % Initialize particles 
-            % Do the time steps n = 0, . . . , T ? 1:
-                % � interpolate ? from the particles onto the mesh
-                % � solve ?v = ??�? for v on the mesh using a fast Poisson solver (e.g. multigrid or FFT
-                % � interpolate v from the mesh back to the particles ? v
-                % � compute vortex stretching ? � ?v on the mesh using, e.g., finite differences
-                % � interpolate the vortex stretching result from the mesh to the particles as a
-                % change of vorticity
-                % � compute vorticity diffusion ? ?? (isotropic and homogeneous) on the particles
-                % using PSE (or RW) (alternatively this can also be computed on the mesh),
-                % add this vorticity change to the one from the stretching term, and update the
-                % particle circulation. Also add the curl of the body force, ? � f
-                % � move (advect) the particles with velocity v and update their positions, leaving the particle volumes unchanged since advection is incompressible.
-                % � remesh if needed. Generate particles only at mesh nodes where |?| > 0.
-            % end time step
-        
-           MESH           = init_mesh(SIM, MESH);               % init mesh
-           wf             = init_field(SIM, MESH);              % init vorticity field
-
-
-           [xp, wp, PART] = remesh_particles(SIM, MESH, wf);    % remesh the field onto new particles
-%            wf             = interp_P2M(MESH, xp, wp);           % init vorticity field by interpolation from particles (P2M)
-
-            
-           uf             = PoissonSolve3D(SIM, MESH, wf);      % solve Poisson eqn for velocity
-           % compute vortex stretching on mesh (finite differences)
-           wf_str = vortex_stretch(SIM, MESH, wf, uf);
-           wp_str = interp_M2P(MESH, xp, wf_str);              % interpolate vortex stretching from mesh to the particles
-           wp = wp + wp_str;                                   % update the particle weights
-           plot_particles(xp, wp2, MESH, 'Particle Vorticity')
-           
-           % compute diffusion on mesh (finite differences)
-           % look into the del2 to compute the discrete Laplacian
-           
-           % move (advect) the particles with the velocity and update thier positions (particle volumes unchanged since advection is incompressible)
-           
-           up         = interp_M2P(MESH, xp, uf);         % interpolate velocity field to particles (M2P)
-           
-           plot_diagnostics(SIM, MESH, PART, xp, wp, wf, uf);
-
     case 'VortexRings'
-               
-    case 'Turbine'       
-                             
+        case_vortexRings(CTRL, SIM, MESH, ENV)       
+    case 'Turbine'          
+        case_turbine(CTRL, SIM, MESH, ENV)
+        fprintf(1, 'done.\n');
+        return
     otherwise
-        error('SIM.example not recognized')
-        
+        error('SIM.example not recognized')       
 end
 
 
@@ -238,13 +180,13 @@ fprintf(['All data in workspace saved to MAT-file: ' SIM.caseName '_workspace.ma
 fprintf([SIM.version ' terminated normally for case ' SIM.caseName '.\n'])
 diary OFF
 
+% %% tear down parallel computing stuff
+% matlabpool close force local
+
 if SIM.DEBUG_LVL > 9000
     % profile the code
     profile viewer
 end
-
-% %% tear down parallel computing stuff
-% matlabpool close force local
 
 
 end % function VortexParticle

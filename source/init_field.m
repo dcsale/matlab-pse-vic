@@ -1,5 +1,5 @@
 % [fieldk, fieldxf_cen, fieldx_ext, fieldr_ext, NX, vort] = init_field(NXs, Sim.testcase, plot_InitField);
-function vort = init_field(Sim,Mesh)
+function vort = init_field(CTRL, Sim, Mesh)
 
 %----------------------------------------------------------------------
 % Vorticity distribution
