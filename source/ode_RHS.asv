@@ -15,12 +15,10 @@ volp  = PART.hp^3; %  approx equal to the core size cubed
 %% calculate RHS of vorticity transport eqn using Vortex-in-Cell algorithm
 
 wf         = interp_P2M(MESH, xp, wp);          % init a new vorticity field by interpolation from particles (P2M)
-wf         = extrapolate_field(SIM, MESH, wf);  % extrapolate vorticity into the ghost layer
-uf         = PoissonSolve3D(SIM, MESH, wf);     % solve Poisson eqn for velocity - the mesh and fields should be ghosted before calling
-% uf         = extrapolate_field(SIM, MESH, uf);  % extrapolate velocity into the ghost layer (or should the Poisson solver already perform this?)
+uf         = PoissonSolve3D(SIM, MESH, wf);     % solve Poisson eqn for velocity
 % compute strain rate for use in diagnostics and/or LES model
 up         = interp_M2P(MESH, xp, uf);          % interpolate velocity field to particles (M2P)
-wf_str     = vortex_stretch(SIM, MESH, wf, uf); % compute vortex stretching on mesh (finite differences) - the mesh and fields should be ghosted before calling
+wf_str     = vortex_stretch(SIM, MESH, wf, uf); % compute vortex stretching on mesh (finite differences) - the mesh and fields should be ghosted by now
 wp_str     = interp_M2P(MESH, xp, wf_str);      % interpolate vortex stretching from mesh to the particles
 % wf_diff    = 0;                                 % compute diffusion on mesh (finite differences) - look into the del2 to compute the discrete Laplacian
 % wp_diff    = interp_M2P(MESH, xp, wf_diff);   % interpolate vorticity diffusion from mesh to the particles

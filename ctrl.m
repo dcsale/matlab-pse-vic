@@ -61,6 +61,7 @@ SIM.kernel    = 4;
 SIM.solve_vel = 1; 
 SIM.alpha     = 2; 
 SIM.testcase = 2;
+SIM.domainbc = 0 % freespace boundary conditions (=1 for periodic - not fully tested yet)
 
 %% algorithm selection for P2P, P2M, and RHS evaluations
 SIM.numProc     = 4;        % number of CPU cores to use for parallel algorithms
@@ -98,7 +99,8 @@ ENV.velFree  = [1; 0; 0];           % Free stream velocity (a 3x1 array) [m/s]
 % ========================================================================%
 SIM.dim      = 3;   % spatial dimensions (2D and 3D supported)
 SIM.h_cutoff = 1.5; % used to define support of a particles in terms of the mesh spacing (hp = h_cutoff * mesh.dx).  stay within range hp/dx > 1
-SIM.pad      = 10;  % minimum distance between mesh boundaries and particles w.r.t. particle support (MESH.pad = SIM.pad * PART.hp;)
+SIM.pad      = 5;   % minimum distance between mesh boundaries and particles w.r.t. particle support (MESH.pad = SIM.pad * PART.hp;)
+SIM.mbc      = 2;    % ghost layer, size of finite diff stencil beyond boundaries
 
 % parent mesh
 MESH.tag      = '3D cartesian: rectilinear';

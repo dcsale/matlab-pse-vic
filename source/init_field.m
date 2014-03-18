@@ -4,9 +4,9 @@ function vort = init_field(CTRL, Sim, Mesh)
 %----------------------------------------------------------------------
 % Vorticity distribution
 %----------------------------------------------------------------------
-vort{1} = zeros(Mesh.NX(1), Mesh.NX(2), Mesh.NX(3));
-vort{2} = zeros(Mesh.NX(1), Mesh.NX(2), Mesh.NX(3));
-vort{3} = zeros(Mesh.NX(1), Mesh.NX(2), Mesh.NX(3));
+vort{1} = zeros(Mesh.NX(1)+2*SIM.mbc, Mesh.NX(2)+2*SIM.mbc, Mesh.NX(3)+2*SIM.mbc);
+vort{2} = zeros(Mesh.NX(1)+2*SIM.mbc, Mesh.NX(2)+2*SIM.mbc, Mesh.NX(3)+2*SIM.mbc);
+vort{3} = zeros(Mesh.NX(1)+2*SIM.mbc, Mesh.NX(2)+2*SIM.mbc, Mesh.NX(3)+2*SIM.mbc);
 
 c = Sim.param.c;
 R = Sim.param.R;

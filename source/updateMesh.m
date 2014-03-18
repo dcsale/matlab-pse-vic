@@ -18,8 +18,12 @@ if MESH.adaptive
     MESH.dx(1) = MESH.x{1}(2) - MESH.x{1}(1);
     MESH.dx(2) = MESH.x{2}(2) - MESH.x{2}(1);
     MESH.dx(3) = MESH.x{3}(2) - MESH.x{3}(1);
+    % now add the ghost layer
+    MESH.x{1} = linspace(MESH.xmin(1)-MESH.dx(1)*SIM.mbc, MESH.xmax(1)+MESH.dx(1)*SIM.mbc, MESH.NX(1)+2*SIM.mbc);
+    MESH.x{2} = linspace(MESH.xmin(2)-MESH.dx(2)*SIM.mbc, MESH.xmax(2)+MESH.dx(2)*SIM.mbc, MESH.NX(2)+2*SIM.mbc);
+    MESH.x{3} = linspace(MESH.xmin(3)-MESH.dx(3)*SIM.mbc, MESH.xmax(3)+MESH.dx(3)*SIM.mbc, MESH.NX(3)+2*SIM.mbc);
     % mesh field
-    [Mesh.xf, Mesh.yf, Mesh.zf] = ndgrid(MESH.x{1}, MESH.x{2}, MESH.x{3});
+    [MESH.xf, MESH.yf, MESH.zf] = ndgrid(MESH.x{1}, MESH.x{2}, MESH.x{3});
     % centred domain
     centre         = (MESH.xmin + MESH.xmax)/2;
     MESH.xf_cen{1} = MESH.xf - centre(1);
@@ -32,8 +36,8 @@ if MESH.adaptive
 end
 
 % crucial to check hp/dx > 1
-if ~(PART.hp / SIM.h_cutoff) > 1.0
-    error('[ERROR] condition hp/dx > 1 is violated!')
+if (PART.hp / max(MESH.dx)) < 1.0
+    error('[ERROR] particle overlap condition is violated! hp/dx > 1!')
 end
 
 end % updateMesh()
