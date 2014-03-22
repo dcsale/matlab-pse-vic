@@ -21,11 +21,11 @@ function field_out = PoissonSolve3D(Sim, Mesh, vort, varargin)
 %*               (c) ETH Zürich
 %*               *Corresponding author at jhw@mek.dtu.dk
 %*
-%* Changelog:    2/22/2014 - Danny Clay Sale (dsale@uw.edu)
+%* Changelog:    Feb. 2014 - Danny Clay Sale (dsale@uw.edu)
 %                * split original scripts into callable functions
 %*               * Added debugging flags for plots and tests                          
 %*               * GPU acceleration of ndgrid() and fftn()
-%*               * renamed some variables to clarify field and coordinates
+%*               * renamed several variables for (hopeful) clarity
 %*               
 %**************************************************************************
 if nargin > 3
@@ -35,20 +35,18 @@ else
     do_timing = false;
 end
 
-%----------------------------------------------------------------------
-% Setup the domain field
-%----------------------------------------------------------------------
 % Extended domain (FFT shifted)
+% x_ext{1} = [];
+% x_ext{2} = [];
+% x_ext{3} = [];
 x_ext{1} = Mesh.x{1} - Mesh.xmin(1); 
 x_ext{1} = [x_ext{1} -x_ext{1}(end)-Mesh.dx(1) -x_ext{1}(end:-1:2)];
-
 x_ext{2} = Mesh.x{2} - Mesh.xmin(2); 
 x_ext{2} = [x_ext{2} -x_ext{2}(end)-Mesh.dx(2) -x_ext{2}(end:-1:2)];
-
 x_ext{3} = Mesh.x{3} - Mesh.xmin(3); 
 x_ext{3} = [x_ext{3} -x_ext{3}(end)-Mesh.dx(3) -x_ext{3}(end:-1:2)];
 
-[xf_ext{1}, xf_ext{2}, xf_ext{3}] = ndgrid(x_ext{1},x_ext{2},x_ext{3});
+[xf_ext{1}, xf_ext{2}, xf_ext{3}] = ndgrid(x_ext{1}, x_ext{2}, x_ext{3});
 Mesh.rf_ext = sqrt(xf_ext{1}.^2 + xf_ext{2}.^2 + xf_ext{3}.^2);
 clear x_ext
 
@@ -78,11 +76,15 @@ vort_fft = cell(1, 3);
 for i = 1:3
 % parfor i = 1:3    
     % the extended vorticity field
-    vort_ext{i}                                         = zeros(2*Mesh.NX(1), 2*Mesh.NX(2), 2*Mesh.NX(3));
-    vort_ext{i}(1:Mesh.NX(1),1:Mesh.NX(2),1:Mesh.NX(3)) = vort{i};
-    vort_fft{i}                                         = fftn(vort_ext{i});
+%     vort_ext{i}                                         = zeros(2*Mesh.NX(1), 2*Mesh.NX(2), 2*Mesh.NX(3));
+    vort_ext{i} = zeros(2*Mesh.NX(1)+2*Sim.mbc, 2*Mesh.NX(2)+2*Sim.mbc, 2*Mesh.NX(3)+2*Sim.mbc); % add the ghost layer
+%     vort_ext{i}(1:Mesh.NX(1),1:Mesh.NX(2),1:Mesh.NX(3)) = vort{i};
+    vort_ext{i}(1+Sim.mbc:Mesh.NX(1)+Sim.mbc, ...
+                1+Sim.mbc:Mesh.NX(2)+Sim.mbc, ...
+                1+Sim.mbc:Mesh.NX(3)+Sim.mbc) = vort{i};
+    vort_fft{i} = fftn(vort_ext{i});
 end
-clear vort_ext
+% clear vort_ext
 
 %----------------------------------------------------------------------
 % Integration kernel
@@ -91,74 +93,74 @@ epsilon = Sim.alpha*max(Mesh.dx); % smoothing radius
 rho     = Mesh.rf_ext/epsilon; % normalised radial distance
 if(Sim.kernel == 0) % 0th order (No regularisation)
     if(Sim.solve_vel == 1)
-        K{1} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1};
+        K{1}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1};
         K{1}(1,1,1) = 0;
-        K{2} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2};
+        K{2}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2};
         K{2}(1,1,1) = 0;
-        K{3} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3};
+        K{3}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3};
         K{3}(1,1,1) = 0;
     else
-        G = 1./(4*pi*Mesh.rf_ext);
+        G        = 1./(4*pi*Mesh.rf_ext);
         G(1,1,1) = 1;
     end
 elseif(Sim.kernel == 2) % 2nd order
     if(Sim.solve_vel == 1)
-        K{1} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + rho.^3).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{1}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + rho.^3).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{1}(1,1,1) = 0;
-        K{2} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2};
+        K{2}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2};
         K{2}(1,1,1) = 0;
-        K{3} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3};
+        K{3}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3};
         K{3}(1,1,1) = 0;            
     else
-        G = 1./(4*pi*Mesh.rf_ext).*erf(rho/sqrt(2));
+        G        = 1./(4*pi*Mesh.rf_ext).*erf(rho/sqrt(2));
         G(1,1,1) = sqrt(2)/(4*pi^(3/2)*epsilon);
     end
 elseif(Sim.kernel == 4) % 4th order
     if(Sim.solve_vel == 1)
-        K{1} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + rho.^3).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{1}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + rho.^3).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{1}(1,1,1) = 0;
-        K{2} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2}.*((-2*rho + rho.^3).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{2}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2}.*((-2*rho + rho.^3).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{2}(1,1,1) = 0;
-        K{3} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3}.*((-2*rho + rho.^3).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{3}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3}.*((-2*rho + rho.^3).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{3}(1,1,1) = 0;
     else
-        G = 1./(4*pi*Mesh.rf_ext).*((rho).*exp(-1/2*rho.^2)/(sqrt(2*pi)) + erf(rho/sqrt(2)));
+        G        = 1./(4*pi*Mesh.rf_ext).*((rho).*exp(-1/2*rho.^2)/(sqrt(2*pi)) + erf(rho/sqrt(2)));
         G(1,1,1) = 3*sqrt(2)/(8*pi^(3/2)*epsilon);
     end
 elseif(Sim.kernel == 6) % 6th order
     if(Sim.solve_vel == 1)
-        K{1} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + 9/4*rho.^3 - 1/4*rho.^5).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{1}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + 9/4*rho.^3 - 1/4*rho.^5).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{1}(1,1,1) = 0;
-        K{2} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2}.*((-2*rho + 9/4*rho.^3 - 1/4*rho.^5).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{2}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2}.*((-2*rho + 9/4*rho.^3 - 1/4*rho.^5).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{2}(1,1,1) = 0;
-        K{3} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3}.*((-2*rho + 9/4*rho.^3 - 1/4*rho.^5).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{3}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3}.*((-2*rho + 9/4*rho.^3 - 1/4*rho.^5).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{3}(1,1,1) = 0;            
     else
-        G = 1./(4*pi*Mesh.rf_ext).*((7/4*rho - 1/4*rho.^3).*exp(-1/2*rho.^2)/(sqrt(2*pi)) + erf(rho/sqrt(2)));
+        G        = 1./(4*pi*Mesh.rf_ext).*((7/4*rho - 1/4*rho.^3).*exp(-1/2*rho.^2)/(sqrt(2*pi)) + erf(rho/sqrt(2)));
         G(1,1,1) = 15*sqrt(2)/(32*pi^(3/2)*epsilon);
     end
 elseif(Sim.kernel == 8) % 8th order
     if(Sim.solve_vel == 1)
-        K{1} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + 89/24*rho.^3 - 20/24*rho.^5 + 1/24*rho.^7).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{1}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + 89/24*rho.^3 - 20/24*rho.^5 + 1/24*rho.^7).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{1}(1,1,1) = 0;
-        K{2} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2}.*((-2*rho + 89/24*rho.^3 - 20/24*rho.^5 + 1/24*rho.^7).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{2}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2}.*((-2*rho + 89/24*rho.^3 - 20/24*rho.^5 + 1/24*rho.^7).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{2}(1,1,1) = 0;
-        K{3} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3}.*((-2*rho + 89/24*rho.^3 - 20/24*rho.^5 + 1/24*rho.^7).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{3}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3}.*((-2*rho + 89/24*rho.^3 - 20/24*rho.^5 + 1/24*rho.^7).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{3}(1,1,1) = 0;            
     else
-        G = 1./(4*pi*Mesh.rf_ext).*((19/8*rho - 2/3*rho.^3 + 1/24*rho.^5).*exp(-1/2*rho.^2)/(sqrt(2*pi)) + erf(rho/sqrt(2)));
+        G        = 1./(4*pi*Mesh.rf_ext).*((19/8*rho - 2/3*rho.^3 + 1/24*rho.^5).*exp(-1/2*rho.^2)/(sqrt(2*pi)) + erf(rho/sqrt(2)));
         G(1,1,1) = 35*sqrt(2)/(64*pi^(3/2)*epsilon);
     end
 elseif(Sim.kernel == 10) % 10th order
     if(Sim.solve_vel == 1)
-        K{1} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + 1027/192*rho.^3 - 349/192*rho.^5 + 35/192*rho.^7 - 1/192*rho.^9).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{1}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{1}.*((-2*rho + 1027/192*rho.^3 - 349/192*rho.^5 + 35/192*rho.^7 - 1/192*rho.^9).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{1}(1,1,1) = 0;
-        K{2} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2}.*((-2*rho + 1027/192*rho.^3 - 349/192*rho.^5 + 35/192*rho.^7 - 1/192*rho.^9).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{2}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{2}.*((-2*rho + 1027/192*rho.^3 - 349/192*rho.^5 + 35/192*rho.^7 - 1/192*rho.^9).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{2}(1,1,1) = 0;
-        K{3} = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3}.*((-2*rho + 1027/192*rho.^3 - 349/192*rho.^5 + 35/192*rho.^7 - 1/192*rho.^9).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
+        K{3}        = - 1./(4*pi*Mesh.rf_ext.^3).*xf_ext{3}.*((-2*rho + 1027/192*rho.^3 - 349/192*rho.^5 + 35/192*rho.^7 - 1/192*rho.^9).*exp(-1/2*rho.^2)/sqrt(2*pi) + erf(rho/sqrt(2)));
         K{3}(1,1,1) = 0;            
     else
-        G = 1./(4*pi*Mesh.rf_ext).*((187/64*rho - 233/192*rho.^3 + 29/192*rho.^5 - 1/192*rho.^7).*exp(-1/2*rho.^2)/(sqrt(2*pi)) + erf(rho/sqrt(2)));
+        G        = 1./(4*pi*Mesh.rf_ext).*((187/64*rho - 233/192*rho.^3 + 29/192*rho.^5 - 1/192*rho.^7).*exp(-1/2*rho.^2)/(sqrt(2*pi)) + erf(rho/sqrt(2)));
         G(1,1,1) = 315*sqrt(2)/(512*pi^(3/2)*epsilon);
     end      
 else

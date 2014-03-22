@@ -13,11 +13,22 @@ ii         = wf_mag > tol;                  % indicies where field is greater th
 PART.nPart = sum(sum(sum(ii)));             % number of particles
 PART.hp    = SIM.h_cutoff * MESH.dx(1);     % a smoothing radius (i.e., a cutoff length or core size)
 
-xp = zeros(3, PART.nPart); % init the particles
+%% some error checking 
+if PART.nPart == 0 
+    error('[Error]: no particles created during remesh.  mesh resolution is possibliy too coarse.')
+end
+
+% crucial to check hp/dx > 1
+if (PART.hp / max(MESH.dx)) < 1.0
+    error('[ERROR] particle overlap condition is violated! hp/dx > 1!')
+end
+
+%%
+xp = zeros(SIM.dim, PART.nPart); % init the particles
 type = 'collocated';
 switch type
     case 'collocated'
-        % create particles at the nodes
+        % create particles at the nodes (this might include the ghost nodes)
         xp(1,:) = MESH.xf(ii);
         xp(2,:) = MESH.yf(ii);
         xp(3,:) = MESH.zf(ii);

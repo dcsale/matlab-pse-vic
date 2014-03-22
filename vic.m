@@ -31,8 +31,9 @@ end
 
 % Set debug break points
 % dbstop in vic at 110
-dbstop in case_vortexRings at 1
-% dbstop if error
+dbstop in case_vortexRings at 19
+dbstop in PoissonSolve3D at 38
+dbstop if error
 
 %% =======================================================================%
 % Initialize part 1

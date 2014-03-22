@@ -1,4 +1,4 @@
-function wf = interp_P2M(MESH, xp, wp, varargin)
+function wf = interp_P2M(SIM, MESH, xp, wp, varargin)
 %% =======================================================================%
 % assign particle strengths through the P2M interpolation
 % ========================================================================%
@@ -43,9 +43,12 @@ dz = MESH.dx(3);
 % wf_x  = wf{1};
 % wf_y  = wf{2};
 % wf_z  = wf{3};
-wf_x = zeros(MESH.NX);
-wf_y = zeros(MESH.NX);
-wf_z = zeros(MESH.NX);
+% wf_x = zeros(MESH.NX);
+% wf_y = zeros(MESH.NX);
+% wf_z = zeros(MESH.NX);
+wf_x = zeros(MESH.NX(1)+2*SIM.mbc, MESH.NX(2)+2*SIM.mbc, MESH.NX(3)+2*SIM.mbc);
+wf_y = zeros(MESH.NX(1)+2*SIM.mbc, MESH.NX(2)+2*SIM.mbc, MESH.NX(3)+2*SIM.mbc);
+wf_z = zeros(MESH.NX(1)+2*SIM.mbc, MESH.NX(2)+2*SIM.mbc, MESH.NX(3)+2*SIM.mbc);
 
 isupport = 2; % NOTE: this should not be hard coded, but depends on the selected interpolation kernel
 

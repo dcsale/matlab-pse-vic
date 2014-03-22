@@ -1,0 +1,15 @@
+16   N1  (Variable names here are optional - they are not read by the program) 
+16   N2
+16   N3
+3.125d-2  dx1
+3.125d-2  dx2
+3.125d-2  dx3
+0.5d0  L
+0.23   alphaeps
+0      Gamma
+3149   randseed
+1      write velocities to file
+1      print screen output
+0      correct divergence
+0      write variance to file
+0      write correlation to file

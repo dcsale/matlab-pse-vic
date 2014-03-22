@@ -8,7 +8,6 @@ function [xp, wp, PART] = init_particles(CTRL, SIM, MESH, ENV)
 % just grow "r" until threshold values are met--use while loop
 
 gamma  = CTRL.Re * ENV.kin_visc;  	% circulation of vortex ring
-cutoff = 0.01;                      % set vorticity to zero when the field is less than cutoff percent of the field maximum
 
 % % first need to find the zero level set of the vorticity field
 % dr = 
@@ -26,18 +25,18 @@ cutoff = 0.01;                      % set vorticity to zero when the field is le
 %     
 % end
 
-MESH.xmin = [0, 0, 0]; 
-MESH.xmax = [2, 2, 2];
-% mesh coordinates
-MESH.x{1} = linspace(MESH.xmin(1), MESH.xmax(1), MESH.NX(1));
-MESH.y{2} = linspace(MESH.xmin(2), MESH.xmax(2), MESH.NX(2));
-MESH.z{3} = linspace(MESH.xmin(3), MESH.xmax(3), MESH.NX(3));
-% mesh spacing
-MESH.dx(1) = MESH.x{1}(2) - MESH.x{1}(1);
-MESH.dx(2) = MESH.x{2}(2) - MESH.x{2}(1);
-MESH.dx(3) = MESH.x{3}(2) - MESH.x{3}(1);
-% mesh field
-[Mesh.xf, Mesh.yf, Mesh.zf] = ndgrid(MESH.x{1}, MESH.x{2}, MESH.x{3});
+% MESH.xmin = [0, 0, 0]; 
+% MESH.xmax = [2, 2, 2];
+% % mesh coordinates
+% MESH.x{1} = linspace(MESH.xmin(1), MESH.xmax(1), MESH.NX(1));
+% MESH.y{2} = linspace(MESH.xmin(2), MESH.xmax(2), MESH.NX(2));
+% MESH.z{3} = linspace(MESH.xmin(3), MESH.xmax(3), MESH.NX(3));
+% % mesh spacing
+% MESH.dx(1) = MESH.x{1}(2) - MESH.x{1}(1);
+% MESH.dx(2) = MESH.x{2}(2) - MESH.x{2}(1);
+% MESH.dx(3) = MESH.x{3}(2) - MESH.x{3}(1);
+% % mesh field
+% [Mesh.xf, Mesh.yf, Mesh.zf] = ndgrid(MESH.x{1}, MESH.x{2}, MESH.x{3});
     
 xp     = [];
 wp     = [];
@@ -63,7 +62,7 @@ for n = 1:nRings
     for i = 1:numel(MESH.x{1})
         for j = 1:numel(MESH.x{2})
             for k = 1:numel(MESH.x{3})
-                if wf_mag_init_norm(i,j,k) >= cutoff        % create a vortex particle here
+                if wf_mag_init_norm(i,j,k) >= SIM.cutoff        % create a vortex particle here
                     createPart(i,j,k) = true;
                 else                                        % do NOT create a vortex particle here (we are below the threshold value for vorticity)
                     createPart(i,j,k) = false;
@@ -98,7 +97,9 @@ for n = 1:nRings
     xp         = [xp (xp_tmp + trans)];
     wp         = [wp wp_tmp.*CTRL.sign(n)];  % this is a quick hack, remove CTRL.sign(n) in future!
 %     ap         = [ap ap_tmp.*CTRL.sign(n)];  % this is a quick hack, remove CTRL.sign(n) in future!
+    
     PART.nPart = size(xp, 2);
+    PART.hp    = SIM.h_cutoff * max(MESH.dx);     % a smoothing radius (i.e., a cutoff length or core size)
 end
 
 

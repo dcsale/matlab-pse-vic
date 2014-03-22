@@ -14,8 +14,8 @@ volp  = PART.hp^3; %  approx equal to the core size cubed
 
 %% calculate RHS of vorticity transport eqn using Vortex-in-Cell algorithm
 
-wf         = interp_P2M(MESH, xp, wp);          % init a new vorticity field by interpolation from particles (P2M)
-wf         = extrapolate_field(SIM, MESH, wf);  % extrapolate vorticity into the ghost layer
+wf         = interp_P2M(SIM, MESH, xp, wp);          % init a new vorticity field by interpolation from particles (P2M)
+% wf         = extrapolate_field(SIM, MESH, wf);  % extrapolate vorticity into the ghost layer
 uf         = PoissonSolve3D(SIM, MESH, wf);     % solve Poisson eqn for velocity - the mesh and fields should be ghosted before calling
 % uf         = extrapolate_field(SIM, MESH, uf);  % extrapolate velocity into the ghost layer (or should the Poisson solver already perform this?)
 % compute strain rate for use in diagnostics and/or LES model

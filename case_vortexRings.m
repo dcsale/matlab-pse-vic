@@ -11,13 +11,12 @@ dt_out    = 1/SIM.fps_output;
 
 
 %% initialize the particles particle from a field
-MESH = init_mesh(CTRL, SIM, MESH);                              % init mesh
-wf   = init_field(CTRL, SIM, MESH);                             % init vorticity field
-[xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);       % remesh the field onto new particles (step 1 - initialize the particles)
+MESH = init_mesh(SIM, MESH);                              % init mesh
+% wf   = init_field(CTRL, SIM, MESH);                             % init vorticity field
+% [xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);       % remesh the field onto new particles (step 1 - initialize the particles)
 
 %% initialize the particles directly and following mesh
-% [xp_old, wp_old, PART] = init_particles(CTRL, SIM, MESH, ENV);    % init particles directly from restart or function (step 1 - initialize the particles)
-% MESH = updateMesh(SIM, MESH, xp_old, PART);
+[xp_old, wp_old, PART] = init_particles(CTRL, SIM, MESH, ENV);    % init particles directly from restart or function (step 1 - initialize the particles)
 
 while time < SIM.endtime-dt_out
     %% The simulation algorithm thus proceeds as follows:
@@ -61,7 +60,7 @@ while time < SIM.endtime-dt_out
     %% output & diagnostics
     % compute the updated fields from the updated particles
     % update the mesh because particles have now moved
-    wf = interp_P2M(MESH, xp, wp);      	% the updated vorticity field interpolated from updated particles (P2M) - this is already calculated in RHS
+    wf = interp_P2M(SIM, MESH, xp, wp);      	% the updated vorticity field interpolated from updated particles (P2M) - this is already calculated in RHS
     uf = PoissonSolve3D(SIM, MESH, wf);  	% the updated velocity field, solved by Poisson eqn - this is already calculated in RHS
     up = interp_M2P(MESH, xp, uf);          % the updated particle velocities, interpolated from velocity field (M2P) - this is already calculated in RHS
     

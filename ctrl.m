@@ -61,7 +61,7 @@ SIM.kernel    = 4;
 SIM.solve_vel = 1; 
 SIM.alpha     = 2; 
 SIM.testcase = 2;
-SIM.domainbc = 0 % freespace boundary conditions (=1 for periodic - not fully tested yet)
+SIM.domainbc = 0; % freespace boundary conditions (=1 for periodic - not fully tested yet)
 
 %% algorithm selection for P2P, P2M, and RHS evaluations
 SIM.numProc     = 4;        % number of CPU cores to use for parallel algorithms
@@ -97,16 +97,19 @@ ENV.velFree  = [1; 0; 0];           % Free stream velocity (a 3x1 array) [m/s]
 %% =======================================================================%
 % Particle & Mesh Parameters
 % ========================================================================%
-SIM.dim      = 3;   % spatial dimensions (2D and 3D supported)
-SIM.h_cutoff = 1.5; % used to define support of a particles in terms of the mesh spacing (hp = h_cutoff * mesh.dx).  stay within range hp/dx > 1
-SIM.pad      = 5;   % minimum distance between mesh boundaries and particles w.r.t. particle support (MESH.pad = SIM.pad * PART.hp;)
-SIM.mbc      = 2;    % ghost layer, size of finite diff stencil beyond boundaries
+SIM.dim      = 3;       % spatial dimensions (2D and 3D supported)
+SIM.h_cutoff = 1.5;     % used to define support of a particles in terms of the mesh spacing (hp = h_cutoff * mesh.dx).  stay within range hp/dx > 1
+SIM.cutoff   = 0.001;  	% set vorticity to zero when the field is less than cutoff percent of the field maximum
+SIM.pad      = 2;       % minimum distance between mesh boundaries and particles w.r.t. particle support (MESH.pad = SIM.pad * PART.hp;)
+SIM.mbc      = 2;       % ghost layer, size of finite diff stencil beyond boundaries
 
 % parent mesh
-MESH.tag      = '3D cartesian: rectilinear';
+MESH.tag      = 'parent mesh';
 MESH.type     = 'colocated';
+MESH.xmin     = 3*[-1, -1, -1];
+MESH.xmax     = 3*[ 1,  1,  1];
+MESH.NX       = [2, 2, 2].^4;  % use powers of 2^nx
 MESH.adaptive = true;
-MESH.NX       = [24, 24, 24];
 % "sub-grid scale" mesh - this mesh is only used for initialization and remeshing of vortex particles
 % MESH_SGS.type     = '3D cartesian: rectilinear';
 % MESH_SGS.adaptive = true;
@@ -115,17 +118,45 @@ MESH.NX       = [24, 24, 24];
 %% =======================================================================%
 % Example Specific Parameters
 % ========================================================================%
-if SIM.testcase == 1 
-    % Bump function: SPHERICAL SCALAR FIELD
-    SIM.param.c = 20; % Function constant
-    SIM.param.R = 1;  % Function constant
+% if SIM.testcase == 1 
+%     % Bump function: SPHERICAL SCALAR FIELD
+%     SIM.param.c = 20; % Function constant
+%     SIM.param.R = 1;  % Function constant
+% elseif SIM.testcase == 2 
+%     % Bump function: VORTEX RING (in the xy-plane)
+%     SIM.param.c = 10;  % Function constants
+%     SIM.param.R = 0.5; % Function constants
+% end
 
-elseif SIM.testcase == 2 
-    % Bump function: VORTEX RING (in the xy-plane)
-    SIM.param.c = 10;  % Function constants
-    SIM.param.R = 0.5; % Function constants
 
-end
+%% =======================================================================%
+%   _   _            _             ______ _                 
+%  | | | |          | |            | ___ (_)                
+%  | | | | ___  _ __| |_ _____  __ | |_/ /_ _ __   __ _ ___ 
+%  | | | |/ _ \| '__| __/ _ \ \/ / |    /| | '_ \ / _` / __|
+%  \ \_/ / (_) | |  | ||  __/>  <  | |\ \| | | | | (_| \__ \
+%   \___/ \___/|_|   \__\___/_/\_\ \_| \_|_|_| |_|\__, |___/
+%                                                  __/ |    
+%                                                 |___/ 
+% ========================================================================%
+% need to specify for each vortex ring:
+CTRL.Re       = [3000];                  	% Reynolds number of the vortex ring, defined as Re = gamma / kin_visc [ring1, ring2, ...]
+CTRL.Rmajor   = [1];                         % major radius of vortex ring [ring1, ring2, ...]
+CTRL.Rminor   = 0.05 .* CTRL.Rmajor;           	% minor radius of vortex ring [ring1, ring2, ...]
+CTRL.center_x = [0];                         % x-coordinate of ring center [ring1, ring2, ...]
+CTRL.center_y = [0];                         % y-coordinate of ring center [ring1, ring2, ...]
+CTRL.center_z = [0];                         % z-coordinate of ring center [ring1, ring2, ...]
+CTRL.sign     = [1];
+% not yet implemented:
+% CTRL.axis_x   = [0, 0];                      	% x-component of unit vector defining the axis which the vortex ring is aligned [ring1, ring2, ...]
+% CTRL.axis_y   = [0, 0];                     	% y-component of unit vector defining the axis which the vortex ring is aligned [ring1, ring2, ...]
+% CTRL.axis_z   = [1, -1];                    	% z-component of unit vector defining the axis which the vortex ring is aligned [ring1, ring2, ...]
+% CTRL.azimAmp  = [0, 0];                       % amplitude of azimuthal purturbation to the circulation strength [ring1, ring2, ...]
+% CTRL.azimFreq = [0, 0];                       % frequency of azimuthal purturbation to the circulation strength [ring1, ring2, ...]
+% CTRL.radAmp   = [0, 0];                       % amplitude of radial purturbation to the circulation strength [ring1, ring2, ...]
+% CTRL.radFreq  = [0, 0];                       % frequency of radial purturbation to the circulation strength [ring1, ring2, ...]
+
+
 %% =======================================================================%
 %   _____          _     _            
 %  |_   _|        | |   (_)           
@@ -149,29 +180,4 @@ CTRL.TEETER     = 0;
 CTRL.BLD_PITCH  = 0;
 % for now, some other parameter are hard coded in (DOE Ref. Model 1 - Tidal Turbine - But could read input files from WT_Perf/FAST)
 
-%% =======================================================================%
-%   _   _            _             ______ _                 
-%  | | | |          | |            | ___ (_)                
-%  | | | | ___  _ __| |_ _____  __ | |_/ /_ _ __   __ _ ___ 
-%  | | | |/ _ \| '__| __/ _ \ \/ / |    /| | '_ \ / _` / __|
-%  \ \_/ / (_) | |  | ||  __/>  <  | |\ \| | | | | (_| \__ \
-%   \___/ \___/|_|   \__\___/_/\_\ \_| \_|_|_| |_|\__, |___/
-%                                                  __/ |    
-%                                                 |___/ 
-% ========================================================================%
-% need to specify for each vortex ring:
-CTRL.Re       = [3000];                  	% Reynolds number of the vortex ring, defined as Re = gamma / kin_visc [ring1, ring2, ...]
-CTRL.Rmajor   = [1];                         % major radius of vortex ring [ring1, ring2, ...]
-CTRL.Rminor   = 0.05 .* CTRL.Rmajor;           	% minor radius of vortex ring [ring1, ring2, ...]
-CTRL.center_x = [0];                         % x-coordinate of ring center [ring1, ring2, ...]
-CTRL.center_y = [0];                         % y-coordinate of ring center [ring1, ring2, ...]
-CTRL.center_z = [1];                         % z-coordinate of ring center [ring1, ring2, ...]
-CTRL.sign     = [1];
-% not yet implemented:
-% CTRL.axis_x   = [0, 0];                      	% x-component of unit vector defining the axis which the vortex ring is aligned [ring1, ring2, ...]
-% CTRL.axis_y   = [0, 0];                     	% y-component of unit vector defining the axis which the vortex ring is aligned [ring1, ring2, ...]
-% CTRL.axis_z   = [1, -1];                    	% z-component of unit vector defining the axis which the vortex ring is aligned [ring1, ring2, ...]
-% CTRL.azimAmp  = [0, 0];                       % amplitude of azimuthal purturbation to the circulation strength [ring1, ring2, ...]
-% CTRL.azimFreq = [0, 0];                       % frequency of azimuthal purturbation to the circulation strength [ring1, ring2, ...]
-% CTRL.radAmp   = [0, 0];                       % amplitude of radial purturbation to the circulation strength [ring1, ring2, ...]
-% CTRL.radFreq  = [0, 0];                       % frequency of radial purturbation to the circulation strength [ring1, ring2, ...]
+

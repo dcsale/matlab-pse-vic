@@ -1,0 +1,2 @@
+pytools>=2013.2
+PyUblas>=0.92.1
