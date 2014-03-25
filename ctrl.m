@@ -108,7 +108,7 @@ MESH.tag      = 'parent mesh';
 MESH.type     = 'colocated';
 MESH.xmin     = 3*[-1, -1, -1];
 MESH.xmax     = 3*[ 1,  1,  1];
-MESH.NX       = [2, 2, 2].^4;  % use powers of 2^nx
+MESH.NX       = [2, 2, 2].^5;  % use powers of 2^nx
 MESH.adaptive = true;
 % "sub-grid scale" mesh - this mesh is only used for initialization and remeshing of vortex particles
 % MESH_SGS.type     = '3D cartesian: rectilinear';

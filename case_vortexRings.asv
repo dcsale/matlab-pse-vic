@@ -62,11 +62,10 @@ while time < SIM.endtime-dt_out
     % update the mesh because particles have now moved
     wf = interp_P2M(SIM, MESH, xp, wp);      	% the updated vorticity field interpolated from updated particles (P2M) - this is already calculated in RHS
     uf = PoissonSolve3D(SIM, MESH, wf);  	% the updated velocity field, solved by Poisson eqn - this is already calculated in RHS
-    up = interp_M2P(SIM, MESH, xp, uf);          % the updated particle velocities, interpolated from velocity field (M2P) - this is already calculated in RHS
+    up = interp_M2P(MESH, xp, uf);          % the updated particle velocities, interpolated from velocity field (M2P) - this is already calculated in RHS
     
     write_outputs(SIM, MESH, PART, time, cycle, xp, wp, wf, uf, up)
 % 	plot_diagnostics(SIM, MESH, PART, time, cycle, xp, wp, wf, uf, up);
-    plot_diagnostics(SIM, MESH, PART, time, cycle, xp, wp, wf, uf, up);
     
     
     
@@ -91,10 +90,10 @@ if SIM.writeParticles
     write_Point3D(size(xp, 2), xp, wp, up, cycle, SIM.outputDir, 'all')
 end
 if SIM.writeVelocityField
-    save_VectorAndMagnitudeVTK_binary(uf{1}, uf{2}, uf{3}, MESH.xf{1}, MESH.xf{2}, MESH.xf{3}, [SIM.outputDir filesep 'Velocity_Field_'  num2str(cycle,'%04.0f') '.vtk'],'vel_field')
+    save_VectorAndMagnitudeVTK_binary(uf{1}, uf{2}, uf{3}, MESH.xf, MESH.yf, MESH.zf, [SIM.outputDir filesep 'Velocity_Field_'  num2str(cycle,'%04.0f') '.vtk'],'vel_field')
 end
 if SIM.writeVorticityField
-    save_VectorAndMagnitudeVTK_binary(wf{1}, wf{2}, wf{3}, MESH.xf{1}, MESH.xf{2}, MESH.xf{3}, [SIM.outputDir filesep 'Vorticity_Field_' num2str(cycle,'%04.0f') '.vtk'],'vort_field')
+    save_VectorAndMagnitudeVTK_binary(wf{1}, wf{2}, wf{3}, MESH.xf, MESH.yf, MESH.zf, [SIM.outputDir filesep 'Vorticity_Field_' num2str(cycle,'%04.0f') '.vtk'],'vort_field')
 end 
 
 fprintf(1, 'WRITE DIAGNOSTICS time     = %g \n', time);

@@ -32,7 +32,7 @@ end
 % Set debug break points
 % dbstop in vic at 110
 dbstop in case_vortexRings at 19
-dbstop in PoissonSolve3D at 38
+% dbstop in PoissonSolve3D at 38
 dbstop if error
 
 %% =======================================================================%

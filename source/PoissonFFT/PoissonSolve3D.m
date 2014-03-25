@@ -36,15 +36,18 @@ else
 end
 
 % Extended domain (FFT shifted)
-% x_ext{1} = [];
-% x_ext{2} = [];
-% x_ext{3} = [];
-x_ext{1} = Mesh.x{1} - Mesh.xmin(1); 
+x_ext{1} = Mesh.x{1} - Mesh.x{1}(1); 
 x_ext{1} = [x_ext{1} -x_ext{1}(end)-Mesh.dx(1) -x_ext{1}(end:-1:2)];
-x_ext{2} = Mesh.x{2} - Mesh.xmin(2); 
+x_ext{2} = Mesh.x{2} - Mesh.x{2}(1); 
 x_ext{2} = [x_ext{2} -x_ext{2}(end)-Mesh.dx(2) -x_ext{2}(end:-1:2)];
-x_ext{3} = Mesh.x{3} - Mesh.xmin(3); 
+x_ext{3} = Mesh.x{3} - Mesh.x{3}(1); 
 x_ext{3} = [x_ext{3} -x_ext{3}(end)-Mesh.dx(3) -x_ext{3}(end:-1:2)];
+% x_ext{1} = Mesh.x{1} - Mesh.xmin(1); 
+% x_ext{1} = [x_ext{1} -x_ext{1}(end)-Mesh.dx(1) -x_ext{1}(end:-1:2)];
+% x_ext{2} = Mesh.x{2} - Mesh.xmin(2); 
+% x_ext{2} = [x_ext{2} -x_ext{2}(end)-Mesh.dx(2) -x_ext{2}(end:-1:2)];
+% x_ext{3} = Mesh.x{3} - Mesh.xmin(3); 
+% x_ext{3} = [x_ext{3} -x_ext{3}(end)-Mesh.dx(3) -x_ext{3}(end:-1:2)];
 
 [xf_ext{1}, xf_ext{2}, xf_ext{3}] = ndgrid(x_ext{1}, x_ext{2}, x_ext{3});
 Mesh.rf_ext = sqrt(xf_ext{1}.^2 + xf_ext{2}.^2 + xf_ext{3}.^2);
@@ -77,11 +80,11 @@ for i = 1:3
 % parfor i = 1:3    
     % the extended vorticity field
 %     vort_ext{i}                                         = zeros(2*Mesh.NX(1), 2*Mesh.NX(2), 2*Mesh.NX(3));
-    vort_ext{i} = zeros(2*Mesh.NX(1)+2*Sim.mbc, 2*Mesh.NX(2)+2*Sim.mbc, 2*Mesh.NX(3)+2*Sim.mbc); % add the ghost layer
+    vort_ext{i} = zeros(2*(Mesh.NX(1)+2*Sim.mbc), 2*(Mesh.NX(2)+2*Sim.mbc), 2*(Mesh.NX(3)+2*Sim.mbc)); % add the ghost layer
 %     vort_ext{i}(1:Mesh.NX(1),1:Mesh.NX(2),1:Mesh.NX(3)) = vort{i};
-    vort_ext{i}(1+Sim.mbc:Mesh.NX(1)+Sim.mbc, ...
-                1+Sim.mbc:Mesh.NX(2)+Sim.mbc, ...
-                1+Sim.mbc:Mesh.NX(3)+Sim.mbc) = vort{i};
+    vort_ext{i}(1:Mesh.NX(1)+2*Sim.mbc, ...
+                1:Mesh.NX(2)+2*Sim.mbc, ...
+                1:Mesh.NX(3)+2*Sim.mbc) = vort{i};
     vort_fft{i} = fftn(vort_ext{i});
 end
 % clear vort_ext
@@ -211,14 +214,16 @@ end
 % Extract numerical solution
 %----------------------------------------------------------------------
 if Sim.solve_vel == 0 
-    stream{1} = stream_ext{1}(1:Mesh.NX(1), 1:Mesh.NX(2), 1:Mesh.NX(3));
-    stream{2} = stream_ext{2}(1:Mesh.NX(1), 1:Mesh.NX(2), 1:Mesh.NX(3));
-    stream{3} = stream_ext{3}(1:Mesh.NX(1), 1:Mesh.NX(2), 1:Mesh.NX(3));  
+    stream    = cell(Sim.dim, 1);
+    stream{1} = stream_ext{1}(1:Mesh.NX(1)+2*Sim.mbc, 1:Mesh.NX(2)+2*Sim.mbc, 1:Mesh.NX(3)+2*Sim.mbc);
+    stream{2} = stream_ext{2}(1:Mesh.NX(1)+2*Sim.mbc, 1:Mesh.NX(2)+2*Sim.mbc, 1:Mesh.NX(3)+2*Sim.mbc);
+    stream{3} = stream_ext{3}(1:Mesh.NX(1)+2*Sim.mbc, 1:Mesh.NX(2)+2*Sim.mbc, 1:Mesh.NX(3)+2*Sim.mbc);  
     field_out = stream;
 else
-    vel{1}    = vel_ext{1}(1:Mesh.NX(1), 1:Mesh.NX(2), 1:Mesh.NX(3));
-    vel{2}    = vel_ext{2}(1:Mesh.NX(1), 1:Mesh.NX(2), 1:Mesh.NX(3));
-    vel{3}    = vel_ext{3}(1:Mesh.NX(1), 1:Mesh.NX(2), 1:Mesh.NX(3));
+    vel       = cell(Sim.dim, 1);
+    vel{1}    = vel_ext{1}(1:Mesh.NX(1)+2*Sim.mbc, 1:Mesh.NX(2)+2*Sim.mbc, 1:Mesh.NX(3)+2*Sim.mbc);
+    vel{2}    = vel_ext{2}(1:Mesh.NX(1)+2*Sim.mbc, 1:Mesh.NX(2)+2*Sim.mbc, 1:Mesh.NX(3)+2*Sim.mbc);
+    vel{3}    = vel_ext{3}(1:Mesh.NX(1)+2*Sim.mbc, 1:Mesh.NX(2)+2*Sim.mbc, 1:Mesh.NX(3)+2*Sim.mbc);
     field_out = vel;
 end
 

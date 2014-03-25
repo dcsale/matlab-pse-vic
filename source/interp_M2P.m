@@ -1,9 +1,9 @@
-function wp = interp_M2P(MESH, xp, wf, varargin)
+function wp = interp_M2P(SIM, MESH, xp, wf, varargin)
 %% =======================================================================%
 % assign particle strengths through the M2P interpolation
 % ========================================================================%
 
-if nargin > 3
+if nargin > 4
     do_timing = true;
     tic
 else

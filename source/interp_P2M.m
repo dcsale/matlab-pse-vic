@@ -3,7 +3,7 @@ function wf = interp_P2M(SIM, MESH, xp, wp, varargin)
 % assign particle strengths through the P2M interpolation
 % ========================================================================%
 
-if nargin > 3
+if nargin > 4
     do_timing = true;
     tic
 else
