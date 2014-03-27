@@ -29,17 +29,17 @@ type = 'collocated';
 switch type
     case 'collocated'
         % create particles at the nodes (this might include the ghost nodes)
-        xp(1,:) = MESH.xf(ii);
-        xp(2,:) = MESH.yf(ii);
-        xp(3,:) = MESH.zf(ii);
-        wp      = interp_M2P(MESH, xp, wf);       % init weights by interpolating the field
+        xp(1,:) = MESH.xf{1}(ii);
+        xp(2,:) = MESH.xf{2}(ii);
+        xp(3,:) = MESH.xf{3}(ii);
+        wp      = interp_M2P(SIM, MESH, xp, wf);       % init weights by interpolating the field
     case 'staggered'
-        % create particles at cell centers
+        % create particles at cell centers (not finished)
 %         wf_cen  = interp_M2M(SIM, MESH, MESH);
 %         xp(1,:) = MESH.xf_cen(ii);
 %         xp(2,:) = MESH.yf_cen(ii);
 %         xp(3,:) = MESH.zf_cen(ii);      
-%         wp      = interp_M2P(MESH, xp, wf_cen);   % init weights by interpolating the field
+%         wp      = interp_M2P(SIM, MESH, xp, wf_cen);   % init weights by interpolating the field
     otherwise
         error('unrecognized type of mesh')
 end

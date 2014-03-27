@@ -1,21 +1,21 @@
 function case_vortexRings(CTRL, SIM, MESH, ENV)
 % simulation stepping
-time      = 0;
-cycle     = 0;
-
-% set intervals to write outputs
-dt_out    = 1/SIM.fps_output;
+time   = 0;
+cycle  = 0;
+dt_out = 1/SIM.fps_output;   % interval to write outputs
 
 %% initialize the field and mesh
 % [xp, wp, ap, nPart] = init_vortexRing(RING, PART, MESH, ENV)
 
 
+
+MESH = init_mesh(SIM, MESH);                                   	% init mesh
+
 %% initialize the particles particle from a field
-MESH = init_mesh(SIM, MESH);                                        % init mesh
 % wf   = init_field(CTRL, SIM, MESH);                             % init vorticity field
 % [xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);       % remesh the field onto new particles (step 1 - initialize the particles)
 
-%% initialize the particles directly and following mesh
+%% initialize the particles directly
 [xp_old, wp_old, PART] = init_particles(CTRL, SIM, MESH, ENV);    % init particles directly from restart or function (step 1 - initialize the particles)
 
 while time < SIM.endtime-dt_out
@@ -34,7 +34,7 @@ while time < SIM.endtime-dt_out
         % end time step  
 
     % update the mesh from the particle positions
-    MESH = updateMesh(SIM, MESH, xp_old, PART);
+%     MESH = updateMesh(SIM, MESH, xp_old, PART);
 
     % update particle positions: move (advect) the particles with the velocity (particle volumes unchanged since advection is incompressible)
     % integrate in time to determine the updated particle positions and updated strengths
@@ -61,8 +61,8 @@ while time < SIM.endtime-dt_out
     % compute the updated fields from the updated particles
     % update the mesh because particles have now moved
     wf = interp_P2M(SIM, MESH, xp, wp);      	% the updated vorticity field interpolated from updated particles (P2M) - this is already calculated in RHS
-    uf = PoissonSolve3D(SIM, MESH, wf);  	% the updated velocity field, solved by Poisson eqn - this is already calculated in RHS
-    up = interp_M2P(SIM, MESH, xp, uf);          % the updated particle velocities, interpolated from velocity field (M2P) - this is already calculated in RHS
+    uf = PoissonSolve3D(SIM, MESH, wf);         % the updated velocity field, solved by Poisson eqn - this is already calculated in RHS
+    up = interp_M2P(SIM, MESH, xp, uf);       	% the updated particle velocities, interpolated from velocity field (M2P) - this is already calculated in RHS
     
     write_outputs(SIM, MESH, PART, time, cycle, xp, wp, wf, uf, up)
 % 	plot_diagnostics(SIM, MESH, PART, time, cycle, xp, wp, wf, uf, up);

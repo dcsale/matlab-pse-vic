@@ -8,9 +8,9 @@ end
 if ~isempty(uf)
     plot_field(uf, MESH, 'Velocity Field')
 end
-if ~isempty(xp)
-    plot_particles(xp, [], MESH, 'Particle Positions')
-end
+% if ~isempty(xp)
+%     plot_particles(xp, [], MESH, 'Particle Positions')
+% end
 if ~isempty(wp) && ~isempty(xp)
     plot_particles(xp, wp, MESH, 'Particle Vorticity')
 end

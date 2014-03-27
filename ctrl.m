@@ -21,13 +21,13 @@
 % @@@@@@, ~" ,e@@@@@@@@@*e*@*  ,@e  @@""@e,,@@@@@@@@@
 % @@@@@@@@ee@@@@@@@@@@@@@@@" ,e@' ,e@' e@@@@@@@@@@@@@
 % @@@@@@@@@@@@@@@@@@@@@@@@" ,@" ,e@@e,,@@@@@@@@@@@@@@
-% @@@@@@@@@@@@@@@@@@@@@@@~ ,@@@,,0@@@@@@@@@@@@@@@@@@@
+% @@ here be dragons @@@@@~ ,@@@,,0@@@@@@@@@@@@@@@@@@@
 % @@@@@@@@@@@@@@@@@@@@@@@@,,@@@@@@@@@@@@@@@@@@@@@@@@@
 
 %% =======================================================================%
 % Simulation Parameters
 % ========================================================================%
-SIM.outputDir           = 'C:\Users\Danny\Desktop\simulation_output\METS-2014\vic-VortexRings-RK4-oldInitParticles';
+SIM.outputDir           = 'C:\Users\Danny\Desktop\simulation_output\METS-2014\vic-VortexRings';
 % SIM.outputDir           = '/home/danny/workspace/simulation_output/VortexInCell-test-1';
 SIM.example             = 'VortexRings';                % current options are: 'VortexRings', 'Turbine', "VIC'
 SIM.DEBUG_LVL           = 8999;                 % setting a debug level > 0 shows additional output.  If you go over 9000 the profiler is enabled.
@@ -51,9 +51,6 @@ SIM.writeVorticityField = true;
 %   1 = solve for velocity by K kernels, 
 %   2 = solve for velocity by G kernel + spectral differentiating
 % alpha: Smoothing radius relative to mesh size: epsilon = alpha*dx (default 2)
-% NXs: Number of mesh cells (use vector for convergence studies)
-%   Sim.NXs       = 64*2.^(0:2);
-%   SIM.NXs       = 8;
 % Testcases
 %   1 = Bump function: SPHERICAL SCALAR FIELD (only for solve_vel = 0)
 %   2 = Bump function: VORTEX RING (xy-plane)
@@ -71,8 +68,8 @@ SIM.runMode_P2M = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2',           'GPU-v1', 'G
 
 %% set time-stepping and output frequency
 SIM.endtime    = 5;
-SIM.fps_output = 10;
-SIM.dt         = 1/SIM.fps_output;
+SIM.fps_output = 30;
+SIM.dt         = 0.01;
 SIM.optionsODE = odeset('AbsTol',           1e-4, ...
                         'RelTol',           1e-4, ...
                         'MaxStep',          1/SIM.fps_output, ...
@@ -90,9 +87,9 @@ SIM.optionsODE = odeset('AbsTol',           1e-4, ...
 %% =======================================================================%
 % Environmental & Fluid Properties
 % ========================================================================%
-% ENV.kin_visc = 1.46e-5;       % fluid kinematic viscosity (m^2/s) AIR
-ENV.kin_visc = 1.05e-6;       % fluid kinematic viscosity (m^2/s) WATER
-ENV.velFree  = [1; 0; 0];           % Free stream velocity (a 3x1 array) [m/s]
+% ENV.kin_visc = 1.46e-5;         % fluid kinematic viscosity (m^2/s) AIR
+ENV.kin_visc = 1.05e-6;      	% fluid kinematic viscosity (m^2/s) WATER
+ENV.velFree  = [0; 0; 0];   	% Free stream velocity (a 3x1 array) [m/s]
 
 %% =======================================================================%
 % Particle & Mesh Parameters
@@ -118,15 +115,15 @@ MESH.adaptive = true;
 %% =======================================================================%
 % Example Specific Parameters
 % ========================================================================%
-% if SIM.testcase == 1 
-%     % Bump function: SPHERICAL SCALAR FIELD
-%     SIM.param.c = 20; % Function constant
-%     SIM.param.R = 1;  % Function constant
-% elseif SIM.testcase == 2 
-%     % Bump function: VORTEX RING (in the xy-plane)
-%     SIM.param.c = 10;  % Function constants
-%     SIM.param.R = 0.5; % Function constants
-% end
+if SIM.testcase == 1 
+    % Bump function: SPHERICAL SCALAR FIELD
+    SIM.param.c = 20; % Function constant
+    SIM.param.R = 1;  % Function constant
+elseif SIM.testcase == 2 
+    % Bump function: VORTEX RING (in the xy-plane)
+    SIM.param.c = 10;   % Function constants
+    SIM.param.R = 1;    % Function constants
+end
 
 
 %% =======================================================================%

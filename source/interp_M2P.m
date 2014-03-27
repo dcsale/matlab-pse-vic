@@ -11,7 +11,6 @@ else
 end
 
 % some temp variables
-dim = numel(MESH.dx);
 
 dx = MESH.dx(1);
 dy = MESH.dx(2);
@@ -56,7 +55,7 @@ parfor p = 1:nPart
             ak = find(sz <= isupport, 1, 'first');           
             bk = find(sz <= isupport, 1, 'last');
             
-            wp_sum = zeros(dim, 1);
+            wp_sum = zeros(SIM.dim, 1);
             for i = ai:bi
                 for j = aj:bj
                     for k = ak:bk 

@@ -1,34 +1,20 @@
-function w_du = vortex_stretch(SIM, MESH, wf, uf)
-% compute the velocity gradient
-% [dx_ufx, dy_ufx, dz_ufx] = gradient(uf{1}, MESH.dx(1), MESH.dx(2), MESH.dx(3));
-% [dx_ufy, dy_ufy, dz_ufy] = gradient(uf{2}, MESH.dx(1), MESH.dx(2), MESH.dx(3));
-% [dx_ufz, dy_ufz, dz_ufz] = gradient(uf{3}, MESH.dx(1), MESH.dx(2), MESH.dx(3));
+function dwf = vorticity_rhs(SIM, MESH, wf, uf)
 
-% compute the vorticity gradient
-% [dx_wfx, dy_wfx, dz_wfx] = gradient(wf{1}, MESH.dx(1), MESH.dx(2), MESH.dx(3));
-% [dx_wfy, dy_wfy, dz_wfy] = gradient(wf{2}, MESH.dx(1), MESH.dx(2), MESH.dx(3));
-% [dx_wfz, dy_wfz, dz_wfz] = gradient(wf{3}, MESH.dx(1), MESH.dx(2), MESH.dx(3));
+% compute the strain and rotation tensors
+[S, R] = tensors(SIM, MESH, wf, uf);
 
 % compute the vortex stretching term
-% w_du_x = wf{1}.*dx_ufx + wf{2}.*dy_ufx + wf{3}.*dz_ufx;
-% w_du_y = wf{1}.*dx_ufy + wf{2}.*dy_ufy + wf{3}.*dz_ufy;
-% w_du_z = wf{1}.*dx_ufz + wf{2}.*dy_ufz + wf{3}.*dz_ufz;
-% w_du   = {w_du_x; w_du_y; w_du_z};
-
-% compute the vortex stretching term
-[S, R] = tensors(SIM, MESH, wf, uf); 
-w_du_x = wf{1}.*sf{1,1} + wf{2}.*sf{2,1} + wf{3}.*sf{3,1};
-w_du_y = wf{1}.*sf{1,2} + wf{2}.*sf{2,2} + wf{3}.*sf{3,2};
-w_du_z = wf{1}.*sf{1,3} + wf{2}.*sf{2,3} + wf{3}.*sf{3,3};
-w_du   = {w_du_x; w_du_y; w_du_z};
-
+w_du_x = wf{1}.*S{1,1} + wf{2}.*S{1,2} + wf{3}.*S{1,3};
+w_du_y = wf{1}.*S{2,1} + wf{2}.*S{2,2} + wf{3}.*S{2,3};
+w_du_z = wf{1}.*S{3,1} + wf{2}.*S{3,2} + wf{3}.*S{3,3};
+dwf    = {w_du_x; w_du_y; w_du_z};
 
 end % function
 
 function [S, R] = tensors(SIM, MESH, wf, uf)
 
 %%------------------------------------------------------------------
-% Compute maximum strainrate O(4) FD - converted from Naga code
+% O(4) Finite Difference - converted from Naga code
 %-------------------------------------------------------------------
 % using ghost layers, only central difference formulas are needed.
 
@@ -89,11 +75,13 @@ end
 % rate of strain tensor (symmetric)
 S = {          dudx, (dudy+dvdx)./2, (dudz+dwdx)./2; ...
      (dvdx+dudy)./2,           dvdy, (dvdz+dwdy)./2; ...
-     (dwdx+dudz)./2, (dwdy+dvdz)./2,           dwdz};  
+     (dwdx+dudz)./2, (dwdy+dvdz)./2,           dwdz};
+ 
 % rotation 'vorticity' tensor (anti-symmetric)
-R = 1/2 .* {     0,  wf{3}, -wf{2}; ...
-            -wf{3},      0,  wf{1}; ...
-             wf{2}, -wf{1},     0};
+R = {        0,  wf{3}./2, -wf{2}./2; ...
+     -wf{3}./2,         0,  wf{1}./2; ...
+      wf{2}./2, -wf{1}./2,         0};
+  
 end % function
 
 

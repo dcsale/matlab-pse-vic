@@ -1,15 +1,15 @@
-function [wf_x, wf_y, wf_z] = vort_P2M(mesh, nPart, xp, ap, hp, runMode_P2M)
+function wf = vort_P2M(SIM, Mesh, nPart, xp, ap, hp, runMode_P2M)
 
-% mesh spacing
-dx   = mesh.dx; 
-dy   = mesh.dy;
-dz   = mesh.dz;
-Nx   = mesh.Nx;
-Ny   = mesh.Ny;
-Nz   = mesh.Nz;
-xMin = mesh.x(1);
-yMin = mesh.y(1);
-zMin = mesh.z(1);
+mbc  = SIM.mbc;
+dx   = Mesh.dx(1); 
+dy   = Mesh.dx(2);
+dz   = Mesh.dx(3);
+Nx   = Mesh.NX(1);
+Ny   = Mesh.NX(2);
+Nz   = Mesh.NX(3);
+xMin = Mesh.xf{1}(1);
+yMin = Mesh.xf{2}(1);
+zMin = Mesh.xf{3}(1);
 
 switch runMode_P2M
     case 'CPU-v1'
@@ -22,9 +22,9 @@ switch runMode_P2M
             for j = 1:Ny
                 for k = 1:Nz
                     for p = 1:nPart
-                        r           = [mesh.x(i) - xp(1,p); 
-                                       mesh.y(j) - xp(2,p); 
-                                       mesh.z(k) - xp(3,p)];
+                        r           = [Mesh.x(i) - xp(1,p); 
+                                       Mesh.y(j) - xp(2,p); 
+                                       Mesh.z(k) - xp(3,p)];
                         K           = molKernel(r,hp);
                         vort        = ap(1:3,p) .* K;
                         wf_x(i,j,k) = wf_x(i,j,k) + vort(1); % summation NOTE: will this type of summation work on the GPU or in parallel?
@@ -74,12 +74,13 @@ switch runMode_P2M
         dev_ap_z = gpuArray( ap(3, 1:nPart) ); 
         
         % allocate the field vorticity on the GPU
-        dev_wf_x = gpuArray.zeros(Nx, Ny, Nz);
-        dev_wf_y = gpuArray.zeros(Nx, Ny, Nz);
-        dev_wf_z = gpuArray.zeros(Nx, Ny, Nz);
+        dev_wf_x = gpuArray.zeros(Nx+2*mbc, Ny+2*mbc, Nz+2*mbc);
+        dev_wf_y = gpuArray.zeros(Nx+2*mbc, Ny+2*mbc, Nz+2*mbc);
+        dev_wf_z = gpuArray.zeros(Nx+2*mbc, Ny+2*mbc, Nz+2*mbc);
         
-        parfor idx = 1:(Nx*Ny*Nz);
-            [i, j, k] = ind2sub([Nx Ny Nz], idx);
+%         parfor idx = 1:(Nx*Ny*Nz);
+        parfor idx = 1:(Nx*Ny*Nz + 2*mbc*SIM.dim);
+            [i, j, k] = ind2sub([Nx+2*mbc, Ny+2*mbc, Nz+2*mbc], idx);
             xf        = gpuArray( xMin + (i-1)*dx );
             yf        = gpuArray( yMin + (j-1)*dy );
             zf        = gpuArray( zMin + (k-1)*dz );
@@ -109,6 +110,8 @@ switch runMode_P2M
     otherwise
         error('[Error] Unrecognized input for variable: runMode');
 end
+
+wf = {wf_x; wf_y; wf_z};
 
 end % function velField
 
