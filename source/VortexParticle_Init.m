@@ -17,8 +17,8 @@ SIM.logfile             = [SIM.outputDir filesep SIM.caseName '_Log.txt'];
    
 %% setup output directory 
 if exist(SIM.outputDir,'dir') == 7
-    debugPrompt = input('[WARNING] output directory exists and may contain important data! Should we clear the data? [yes / no]: ','s');
-    if strcmp(debugPrompt,'yes')
+    debugPrompt = input('[WARNING] output directory exists and may contain important data! Should we clear the data? [(y)es / (n)o]: ','s');
+    if strcmp(debugPrompt,'yes') || strcmp(debugPrompt,'y')
         rmdir([SIM.outputDir],'s');
         mkdir(SIM.outputDir);
     else

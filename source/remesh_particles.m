@@ -1,26 +1,31 @@
 function [xp, wp, PART] = remesh_particles(SIM, MESH, wf)
 %% ideas
 % could also use this function to creat particles inbetween a min and max
-% value, for example, could be used to create particle isosurfaces !
+% value, for example, could be used to create particle isosurfaces
+
+%% update the mesh to have tighter bounds on the vorticity support (giving better particle resolution)
+% MESH = updateMesh(SIM, MESH, xp_old, PART);
 
 %% =======================================================================%
-% create the particle locations at the nodes within vorticity support, plus
-% some additional padding (ghost particles?)
+% create the particle locations at the nodes within vorticity support
+% NOTE: should we also add some additional padding (ghost particles?)
 % ========================================================================%
 wf_mag     = sqrt(wf{1}.^2 + wf{2}.^2 + wf{3}.^2);
-tol        = 1e-4;                          % NOTE: should be function input and part of SIM structure
-ii         = wf_mag > tol;                  % indicies where field is greater than tolerance
-PART.nPart = sum(sum(sum(ii)));             % number of particles
-PART.hp    = SIM.h_cutoff * MESH.dx(1);     % a smoothing radius (i.e., a cutoff length or core size)
+ii         = wf_mag > SIM.tol_remesh;      	% indicies where field is greater than tolerance
+
+
+PART.nPart = sum(sum(sum(ii)));            	% number of particles
+PART.hp    = SIM.h_cutoff * max(MESH.dx); 	% a smoothing radius (i.e., a cutoff length or core size)
+PART.volp  = prod(MESH.dx);                 % particle volumes (using midpoint/rectangular rule)
 
 %% some error checking 
 if PART.nPart == 0 
-    error('[Error]: no particles created during remesh.  mesh resolution is possibliy too coarse.')
+    error('[Error] no particles created during remesh.')
 end
 
-% crucial to check hp/dx > 1
+% crucial to check particle overlap condition hp/dx > 1
 if (PART.hp / max(MESH.dx)) < 1.0
-    error('[ERROR] particle overlap condition is violated! hp/dx > 1!')
+    error('[ERROR] particle overlap condition is violated! hp/dx > 1')
 end
 
 %%
@@ -41,9 +46,6 @@ switch type
 %         xp(3,:) = MESH.zf_cen(ii);      
 %         wp      = interp_M2P(SIM, MESH, xp, wf_cen);   % init weights by interpolating the field
     otherwise
-        error('unrecognized type of mesh')
+        error('[ERROR] unrecognized type of mesh')
 end
-
-
-
 

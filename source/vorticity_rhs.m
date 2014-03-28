@@ -1,7 +1,7 @@
 function dwf = vorticity_rhs(SIM, MESH, wf, uf)
 
 % compute the strain and rotation tensors
-[S, R] = tensors(SIM, MESH, wf, uf);
+[S, ~] = tensors(SIM, MESH, wf, uf);
 
 % compute the vortex stretching term
 w_du_x = wf{1}.*S{1,1} + wf{2}.*S{1,2} + wf{3}.*S{1,3};
