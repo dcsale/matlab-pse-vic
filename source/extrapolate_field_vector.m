@@ -1,4 +1,4 @@
-function uf = extrapolate_field(SIM, MESH, uf)
+function uf = extrapolate_field_vector(SIM, MESH, uf)
 % This routine extrapolates field values into the ghost layer
 
 %% for now, just use nearest neighbor extrapolation.
@@ -39,4 +39,5 @@ for k = SIM.mbc+MESH.NX(3):MESH.NX(3)+2*SIM.mbc
 end
 
 end % function
+
 

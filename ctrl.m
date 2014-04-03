@@ -26,7 +26,7 @@
 % ========================================================================%
 % SIM.outputDir           = 'C:\Users\Danny\Desktop\simulation_output\METS-2014\test_vortexRing';
 SIM.outputDir           = '/home/danny/workspace/simulation_output/VortexInCell-test-1';
-SIM.DEBUG_LVL           = 999;                 % setting a debug level > 0 shows additional output.  If you go over 9000 the profiler is enabled.
+SIM.DEBUG_LVL           = 8999;                 % setting a debug level > 0 shows additional output.  If you go over 9000 the profiler is enabled.
 SIM.writeParticles      = true;
 SIM.writeVelocityField  = true;
 SIM.writeVorticityField = true;
@@ -60,8 +60,8 @@ SIM.runMode_P2M = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2',           'GPU-v1', 'G
 
 %% set time-stepping and output frequency
 SIM.endtime    = 5;
-SIM.fps_output = 25;
-SIM.dt         = 0.01;
+SIM.fps_output = 10;
+SIM.dt         = 0.1;
 SIM.optionsODE = odeset('AbsTol',           1e-4, ...
                         'RelTol',           1e-4, ...
                         'MaxStep',          1/SIM.fps_output, ...
@@ -90,7 +90,7 @@ SIM.dim        = 3;       % spatial dimensions (2D and 3D supported)
 SIM.mbc        = 2;       % ghost layer, size of finite diff stencil beyond boundaries
 SIM.h_cutoff   = 2;       % (same as alpha?) used to define support of a particles in terms of the mesh spacing (hp = h_cutoff * mesh.dx).  stay within range hp/dx > 1
 SIM.tol_remesh = 1e-6;    % set vorticity to zero when the field is less than cutoff percent of the field maximum
-SIM.pad        = 2;       % minimum distance between mesh boundaries and particles w.r.t. particle support (MESH.pad = SIM.pad * PART.hp;)
+SIM.pad        = 5;       % minimum distance between mesh boundaries and particles w.r.t. particle support (MESH.pad = SIM.pad * PART.hp;)
 
 % parent mesh
 MESH.tag      = 'parent mesh';
@@ -127,7 +127,7 @@ switch CTRL.testcase
         %                                                 |___/ 
         % ========================================================================%
         % need to specify for each vortex ring:
-        CTRL.Re       = [1000];                         % Reynolds number of the vortex ring, defined as Re = gamma / kin_visc [ring1, ring2, ...]
+        CTRL.Re       = [10000];                         % Reynolds number of the vortex ring, defined as Re = gamma / kin_visc [ring1, ring2, ...]
         CTRL.Rmajor   = [1];                            % major radius of vortex ring [ring1, ring2, ...]
         CTRL.Rminor   = 0.2 .* CTRL.Rmajor;             % minor radius of vortex ring [ring1, ring2, ...]
         CTRL.center_x = [0];                            % x-coordinate of ring center [ring1, ring2, ...]

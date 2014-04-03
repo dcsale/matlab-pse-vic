@@ -25,6 +25,11 @@ set(gca, 'CLim',  [-cabs cabs]);
 set(cb,  'YLim',  [-cabs cabs]);
 set(cb,  'YTick', consolidator([linspace(-cabs,    0, nLevels/2 + 1), ...
                                 linspace(    0, cabs, nLevels/2 + 1)]));   
-   
+axis equal
+xlabel('x [m]')
+ylabel('y [m]')
+zlabel('z [m]')
+drawnow
+
 end % function
 
