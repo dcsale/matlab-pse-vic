@@ -61,7 +61,8 @@ SIM.runMode_P2M = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2',           'GPU-v1', 'G
 %% set time-stepping and output frequency
 SIM.endtime    = 5;
 SIM.fps_output = 10;
-SIM.dt         = 0.1;
+SIM.TSTEPPING  = 'variable';    % choose 'fixed' or 'variable' time stepping algorithms
+SIM.dt         = 0.1;   % time step (only used for fixed step integrators)
 SIM.optionsODE = odeset('AbsTol',           1e-4, ...
                         'RelTol',           1e-4, ...
                         'MaxStep',          1/SIM.fps_output, ...

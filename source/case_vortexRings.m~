@@ -5,24 +5,37 @@ cycle  = 0;
 dt_out = 1/SIM.fps_output;   % interval to write outputs
 
 % initialize the mesh, field, and particles
-MESH                   = init_mesh(SIM, MESH);          	% initialize the mesh
-wf                     = init_field(CTRL, SIM, MESH, ENV);	% init a field on the mesh
-
-% [xp0, wp0, PART0] = remesh_particles(SIM, MESH, wf);
+MESH = init_mesh(SIM, MESH);                % initialize the mesh
+wf   = init_field(CTRL, SIM, MESH, ENV);	% init a field on the mesh
+[xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);   % initialize particle representation of field (step 1 - initialize the particles)
 
 while time < SIM.endtime-dt_out
     
-    [xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);   % initialize particle representation of field (step 1 - initialize the particles)
+    % is this the correct way to remesh particles, shouldn't xp_old, wp_old be the input arguments!?
+    % there is a difference between remeshing from a field, and remeshing
+    % from paticles, we want the later in this situation.
+%     [xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);   % initialize particle representation of field (step 1 - initialize the particles)
 
       % integrate in time to determine the updated particle positions and updated strengths (particle volumes unchanged since advection is incompressible)
-% 	tspan = [time, time+dt_out];                % variable time stepping
-    tspan = time:SIM.dt:max(time+dt_out, time+SIM.dt);          % fixed time stepping
+        [~, Y] = ode45(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
+%     [~, Y] = ode113(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
+      switch SIM.TSTEPPING
+        case 'fixed'
+            tspan = time:SIM.dt:max(time+dt_out, time+SIM.dt);          % fixed time stepping
+                [~, Y] = ode45(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
+%     [~, Y] = ode113(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
+        case 'variable'
+            tspan = [time, time+dt_out];	% variable time stepping
+            
+    end
+    
+      
+%     
     x_init = [reshape(xp_old', SIM.dim*PART.nPart, 1); 
               reshape(wp_old', SIM.dim*PART.nPart, 1)];
-%     [~, Y] = ode45(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
-%     [~, Y] = ode113(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
+
 %     Y = ode1(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
-    Y = ode2(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
+%     Y = ode2(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
 %     Y = ode4(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
     
     nVars  = 2;
@@ -34,26 +47,22 @@ while time < SIM.endtime-dt_out
     % compute the updated fields from the updated particles
     % update the mesh because particles have now moved
     wf = interp_P2M(SIM, MESH, xp, wp);      	% the updated vorticity field interpolated from updated particles (P2M) - this is already calculated in RHS
+    
     uf = PoissonSolve3D(SIM, MESH, wf);         % the updated velocity field, solved by Poisson eqn - this is already calculated in RHS
     up = interp_M2P(SIM, MESH, xp, uf);       	% the updated particle velocities, interpolated from velocity field (M2P) - this is already calculated in RHS
     [uf, up] = add_freestream(uf, up, ENV);     % add the freestream velocity (Helmholtz decomposition)
-    
-    
+        
     write_outputs(SIM, MESH, PART, time, cycle, xp, wp, wf, uf, up)
 %     plot_diagnostics(SIM, MESH, PART, time, cycle, xp, wp, wf, uf, up);
     plot_particles(xp, up, MESH, 'Particle Velocity')
-        
-    
-%     max(max( xp - xp0 ))
-%     max(max( wp - wp0 ))
-    
+            
     %% prepare for next cycle
     % update the time span for next integration cycle
     cycle = cycle + 1;
     time  = tspan(end);
     % update the particles
-%     xp_old = xp;
-%     wp_old = wp;
+    xp_old = xp;
+    wp_old = wp;
     
     
 end % time

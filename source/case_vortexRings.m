@@ -5,25 +5,32 @@ cycle  = 0;
 dt_out = 1/SIM.fps_output;   % interval to write outputs
 
 % initialize the mesh, field, and particles
-MESH = init_mesh(SIM, MESH);          	% initialize the mesh
+MESH = init_mesh(SIM, MESH);                % initialize the mesh
 wf   = init_field(CTRL, SIM, MESH, ENV);	% init a field on the mesh
+[xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);   % initialize particle representation of field (step 1 - initialize the particles)
 
 while time < SIM.endtime-dt_out
     
     % is this the correct way to remesh particles, shouldn't xp_old, wp_old be the input arguments!?
-    [xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);   % initialize particle representation of field (step 1 - initialize the particles)
+    % there is a difference between remeshing from a field, and remeshing
+    % from paticles, we want the later in this situation.
+%     [xp_old, wp_old, PART] = remesh_particles(SIM, MESH, wf);   % initialize particle representation of field (step 1 - initialize the particles)
 
       % integrate in time to determine the updated particle positions and updated strengths (particle volumes unchanged since advection is incompressible)
-% 	tspan = [time, time+dt_out];                % variable time stepping
-    tspan = time:SIM.dt:max(time+dt_out, time+SIM.dt);          % fixed time stepping
     x_init = [reshape(xp_old', SIM.dim*PART.nPart, 1); 
               reshape(wp_old', SIM.dim*PART.nPart, 1)];
-%     [~, Y] = ode45(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
-%     [~, Y] = ode113(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
-%     Y = ode1(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
-    Y = ode2(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
-%     Y = ode4(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
-    
+    switch SIM.TSTEPPING
+        case 'fixed'
+            tspan = time:SIM.dt:max(time+dt_out, time+SIM.dt);          % fixed time stepping
+%             Y = ode1(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
+            Y = ode2(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
+%             Y = ode4(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
+        case 'variable'
+            tspan = [time, time+dt_out];	% variable time stepping
+%             [~, Y] = ode45(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
+            [~, Y] = ode113(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);          
+    end
+       
     nVars  = 2;
     tmp    = reshape(Y(end,:)', SIM.dim*PART.nPart, nVars);         % the solution matrix taking the final time, reassign into meaningful variable names
     xp     = reshape( tmp(:,1),         PART.nPart, SIM.dim)';      % the updated particle positions
@@ -47,8 +54,8 @@ while time < SIM.endtime-dt_out
     cycle = cycle + 1;
     time  = tspan(end);
     % update the particles
-%     xp_old = xp;
-%     wp_old = wp;
+    xp_old = xp;
+    wp_old = wp;
     
     
 end % time
