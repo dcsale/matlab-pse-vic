@@ -31,23 +31,14 @@ end
 
 % Set debug break points
 % dbstop in vic at 110
-% dbstop in case_vortexRings at 19
+dbstop in case_vortexRings at 1
 % dbstop in PoissonSolve3D at 38
-dbstop if error
+% dbstop if error
 
 %% =======================================================================%
 % Initialize part 1
 % ========================================================================%
 [SIM, ENV, MESH, CTRL] = VortexParticle_Init(inputFile);
-
-% if SIM.DEBUG_LVL > 0
-%     % check the number of particles and ask for permission to continue
-%     fprintf(1,'\n[DEBUG] The number of particles is %g, continue?\n', PART.nPart);
-%     debugPrompt = input('[DEBUG] press enter to continue, or type ABORT to enter debug mode: ','s');
-%     if strcmp(debugPrompt,'ABORT')
-%         error('[DEBUG] ABORT')
-%     end
-% end
 
 %% =======================================================================%
 % Initialize part 2

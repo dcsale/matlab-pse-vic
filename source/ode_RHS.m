@@ -4,8 +4,10 @@ function dx_dt = ode_RHS(t, x, CTRL, SIM, MESH, PART, ENV)
 % reshape the array into more meaningful variable names
 nVars = 2;
 tmp   = reshape(       x, SIM.dim*PART.nPart, nVars);  
-xp    = reshape(tmp(:,1),         PART.nPart, SIM.dim)';    % the particle positions
-wp    = reshape(tmp(:,2),         PART.nPart, SIM.dim)';    % the particle weights
+xp    = reshape(tmp(:,1),         PART.nPart, SIM.dim)';    % particle positions
+wp    = reshape(tmp(:,2),         PART.nPart, SIM.dim)';    % particle weights (vorticity)
+% ap    = reshape(tmp(:,2),         PART.nPart, SIM.dim)';    % particle strengths (circulation)
+% wp    = ap./(PART.hp^3);
 
 %% Vortex-in-Cell algorithm
 wf         = interp_P2M(SIM, MESH, xp, wp);       	% init a new vorticity field by interpolation from particles (P2M)

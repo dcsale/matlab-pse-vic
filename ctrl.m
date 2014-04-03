@@ -24,9 +24,9 @@
 %% =======================================================================%
 % Simulation Parameters
 % ========================================================================%
-SIM.outputDir           = 'C:\Users\Danny\Desktop\simulation_output\METS-2014\test_interpolation';
-% SIM.outputDir           = '/home/danny/workspace/simulation_output/VortexInCell-test-1';
-SIM.DEBUG_LVL           = 8999;                 % setting a debug level > 0 shows additional output.  If you go over 9000 the profiler is enabled.
+% SIM.outputDir           = 'C:\Users\Danny\Desktop\simulation_output\METS-2014\test_vortexRing';
+SIM.outputDir           = '/home/danny/workspace/simulation_output/VortexInCell-test-1';
+SIM.DEBUG_LVL           = 999;                 % setting a debug level > 0 shows additional output.  If you go over 9000 the profiler is enabled.
 SIM.writeParticles      = true;
 SIM.writeVelocityField  = true;
 SIM.writeVorticityField = true;
@@ -47,9 +47,6 @@ SIM.writeVorticityField = true;
 %   1 = solve for velocity by K kernels, 
 %   2 = solve for velocity by G kernel + spectral differentiating (only works for periodic BC, or also freespace BC?)
 % alpha: Smoothing radius relative to mesh size: epsilon = alpha*dx (default 2) (and where is this used?)
-% Testcases
-%   1 = Bump function: SPHERICAL SCALAR FIELD (only for solve_vel = 0)
-%   2 = Bump function: VORTEX RING (xy-plane)
 SIM.kernel    = 4;
 SIM.solve_vel = 1; 
 SIM.alpha     = 2; 
@@ -63,8 +60,8 @@ SIM.runMode_P2M = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2',           'GPU-v1', 'G
 
 %% set time-stepping and output frequency
 SIM.endtime    = 5;
-SIM.fps_output = 10;
-SIM.dt         = 0.1;
+SIM.fps_output = 25;
+SIM.dt         = 0.01;
 SIM.optionsODE = odeset('AbsTol',           1e-4, ...
                         'RelTol',           1e-4, ...
                         'MaxStep',          1/SIM.fps_output, ...
@@ -98,10 +95,10 @@ SIM.pad        = 2;       % minimum distance between mesh boundaries and particl
 % parent mesh
 MESH.tag      = 'parent mesh';
 MESH.type     = 'colocated';
-MESH.xmin     = 3*[-1, -1, -1];
-MESH.xmax     = 3*[ 1,  1,  1];
-MESH.NX       = [32, 32, 32];  % use powers of 2^nx
-MESH.adaptive = true;
+MESH.xmin     = 2*[-1, -1, -1];
+MESH.xmax     = 2*[ 1,  1,  1];
+MESH.NX       = [24, 24, 24];  % use powers of 2^nx
+MESH.adaptive = false;
 
 %% =======================================================================%
 % Example Specific Parameters
@@ -119,7 +116,7 @@ switch CTRL.testcase
         CTRL.param.R = 1;    % Function constant
         
     case 3
-        %% =======================================================================%
+       %% =======================================================================%
         %   _   _            _             ______ _                 
         %  | | | |          | |            | ___ (_)                
         %  | | | | ___  _ __| |_ _____  __ | |_/ /_ _ __   __ _ ___ 
@@ -130,7 +127,7 @@ switch CTRL.testcase
         %                                                 |___/ 
         % ========================================================================%
         % need to specify for each vortex ring:
-        CTRL.Re       = [3000];                         % Reynolds number of the vortex ring, defined as Re = gamma / kin_visc [ring1, ring2, ...]
+        CTRL.Re       = [1000];                         % Reynolds number of the vortex ring, defined as Re = gamma / kin_visc [ring1, ring2, ...]
         CTRL.Rmajor   = [1];                            % major radius of vortex ring [ring1, ring2, ...]
         CTRL.Rminor   = 0.2 .* CTRL.Rmajor;             % minor radius of vortex ring [ring1, ring2, ...]
         CTRL.center_x = [0];                            % x-coordinate of ring center [ring1, ring2, ...]
@@ -147,7 +144,7 @@ switch CTRL.testcase
         % CTRL.radFreq  = [0, 0];                       % frequency of radial purturbation to the circulation strength [ring1, ring2, ...]
         
     case 4
-        %% =======================================================================%
+       %% =======================================================================%
         %   _____          _     _            
         %  |_   _|        | |   (_)           
         %    | |_   _ _ __| |__  _ _ __   ___ 
