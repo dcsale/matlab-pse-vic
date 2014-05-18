@@ -1,8 +1,8 @@
-function case_turbine(CTRL, SIM, MESH)
+function case_turbine(CTRL, SIM, MESH, ENV)
 
 %% user parameters
-dt_emit     = 0.15; % emit particles every [seconds]
-theta     = 0; % initial value. shaft angular position.
+dt_emit = 0.15;     % emit particles every [seconds] -- it's best to choose this value so that the blade tip does not cross more than 1 cell per time step -- or the FAST developers suggest that you choose about 200 time steps per rotor revolution.
+theta   = 0;        % initial value. shaft angular position.
 
 
 %%
@@ -31,23 +31,33 @@ ap_old_wake = [];
 % wp_old_wake = [];
 % up_old_wake = [];
 
-% xp_inflow     = [];
-% ap_inflow     = [];
-xp_old_inflow = [];
-ap_old_inflow = [];
-% wp_old_inflow = [];
-% up_old_inflow = [];
+if CTRL.INFLOW_TURB
+    % xp_inflow     = [];
+    % ap_inflow     = [];
+    xp_old_inflow = [];
+    ap_old_inflow = [];
+    % wp_old_inflow = [];
+    % up_old_inflow = [];
+end
 
 Coord         = cell(CTRL.NUM_BLADES, 1);
 xp_emit_rotor = cell(CTRL.NUM_BLADES, 1);
 
 while time < SIM.endtime-dt_out
 
-    tspan = [time, time+dt_out];        % variable time stepping
+%     tspan = [time, time+dt_out];        % variable time stepping
 %     tspan = 0:0.1:SIM.endtime;          % fixed time stepping
 
+    %% compute the rotor speed and blade coordinates
     theta_init  = theta;
-    [~, Y]      = ode45(@shaftSpeed, tspan, theta_init, SIM.optionsODE, CTRL.ROT_SPD);
+    switch SIM.TSTEPPING
+        case 'fixed'
+            tspan = time:SIM.dt:max(time+dt_out, time+SIM.dt);
+            Y     =   ode2(@shaftSpeed, tspan, theta_init, SIM.optionsODE, CTRL.ROT_SPD);
+        case 'variable'
+            tspan = [time, time+dt_out];
+            [~, Y] = ode45(@shaftSpeed, tspan, theta_init, SIM.optionsODE, CTRL.ROT_SPD);
+    end
     theta_old   = Y(1); % solution at tspan(1)
     theta       = Y(2); % solution at tspan(end)
 
@@ -58,11 +68,12 @@ while time < SIM.endtime-dt_out
     d_dt_theta_old  = shaftSpeed(tspan(1), theta_old, CTRL.ROT_SPD);
     d_dt_theta      = shaftSpeed(tspan(2),     theta, CTRL.ROT_SPD);
 
+    %% compute the emitted particle positions and strengths
     xi = cosspace(0, 1, CTRL.NUM_SEC, 'both'); % blade element spacing
     for n = 1:CTRL.NUM_BLADES
         % a structure array, containing transformations to each blade
-        Coord(n)         = defineCoordSystems(LL, azim_blades(n));
-        xp_emit_rotor{n} = interparc(xi, ...
+        Coord(n)         = defineCoordSystems(CTRL, azim_blades(n));
+        xp_emit_rotor(n) = interparc(xi, ...
                                      [Coord(n).Origin.Blade(1) Coord(n).Tip.Blade(1)], ...
                                      [Coord(n).Origin.Blade(2) Coord(n).Tip.Blade(2)], ...
                                      [Coord(n).Origin.Blade(3) Coord(n).Tip.Blade(3)], ...
@@ -85,12 +96,23 @@ while time < SIM.endtime-dt_out
 
         % wake
         xp_emit_wake = xp_rotor;
-        ap_emit_wake = [repmat(Coord(1).Tran.BG * [0; 0; 1], 1, CTRL.NUM_SEC), ...
-                        repmat(Coord(2).Tran.BG * [0; 0; 1], 1, CTRL.NUM_SEC), ...
-                        repmat(Coord(3).Tran.BG * [0; 0; 1], 1, CTRL.NUM_SEC)];
+        circulation  = 1;           % give a unit circulation in the blade coordinate system
+        ap_emit_wake = [repmat(Coord(1).Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC), ...
+                        repmat(Coord(2).Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC), ...
+                        repmat(Coord(3).Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC)];
 
+                    
+        if CTRL.INFLOW_TURB
+            
+            
+        else
+            
+            
+        end
+        
+        
         % inflow turbulence
-        [my, mz] = meshgrid(linspace(           -CTRL.ROTOR_DIA,             CTRL.ROTOR_DIA, 5), ...
+        [my, mz] = meshgrid(linspace(             -CTRL.ROTOR_DIA,               CTRL.ROTOR_DIA, 5), ...
                             linspace(CTRL.HUB_HT - CTRL.ROTOR_DIA, CTRL.HUB_HT + CTRL.ROTOR_DIA, 5));
         xp_emit_inflow = [-CTRL.ROTOR_DIA/2.*ones(1,numel(my)); my(:)'; mz(:)'];
         ap_emit_inflow = rand(3, size(xp_emit_inflow, 2));
@@ -116,6 +138,9 @@ while time < SIM.endtime-dt_out
     PART.nPart_inflow = size(xp_inflow, 2);
 %             PART.nPart_wake   = size([xp_old_wake  , xp_emit_wake  ], 2);
 %             PART.nPart_inflow = size([xp_old_inflow, xp_emit_inflow], 2);
+
+
+
 
     % pass in ALL the particles (inflow, wake, rotor, image), and the points to interpolate to
     % should just preallocate up_rotor here !!! check preallocation in this file to speedup code
@@ -159,7 +184,7 @@ while time < SIM.endtime-dt_out
     xp      = reshape( tmp(:,1),   PART.nPart, 3)';
     ap      = reshape( tmp(:,2),   PART.nPart, 3)';
 
-    % instead use a push, pop, stack idea here
+    % instead use a push, pop, stack idea here -- this indexing becomes clumbsy
     xp_wake   = xp(:, PART.nPart + 1 - PART.nPart_inflow - PART.nPart_wake : PART.nPart  - PART.nPart_inflow);
     ap_wake   = ap(:, PART.nPart + 1 - PART.nPart_inflow - PART.nPart_wake : PART.nPart  - PART.nPart_inflow);
     xp_inflow = xp(:, PART.nPart + 1 - PART.nPart_inflow                        : end);
@@ -243,7 +268,7 @@ while time < SIM.endtime-dt_out
                   'color', 'white', ...
                   'units', 'normalized');
     end
-    output_exampleTurbine(SIM, MESH, PART, ENV, Coord, LL, ...
+    output_exampleTurbine(SIM, MESH, PART, ENV, Coord, CTRL, ...
                           fig1, fig2, ...                          
                           tspan, ...
                           xp, ...
@@ -252,7 +277,7 @@ while time < SIM.endtime-dt_out
                           azim_blades, ...
                           d_dt_theta_old, ...
                           d_dt_theta)
-%             makeFigures_v2(MESH, LL, xp, ap, up, uf_x, uf_y, uf_z, wf_x, wf_y, wf_z, SIM.DEBUG_LVL)   
+%             makeFigures_v2(MESH, CTRL, xp, ap, up, uf_x, uf_y, uf_z, wf_x, wf_y, wf_z, SIM.DEBUG_LVL)   
 
 end
         

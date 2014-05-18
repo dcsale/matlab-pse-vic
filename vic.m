@@ -31,7 +31,8 @@ end
 
 % Set debug break points
 % dbstop in vic at 110
-dbstop in case_vortexRings at 1
+% dbstop in case_vortexRings at 1
+dbstop in case_turbine at 1
 % dbstop in PoissonSolve3D at 38
 % dbstop if error
 
@@ -41,11 +42,13 @@ dbstop in case_vortexRings at 1
 [SIM, ENV, MESH, CTRL] = VortexParticle_Init(inputFile);
 
 %% =======================================================================%
-% Initialize part 2
+% MAIN LOOP - (Initialize part 2)
 % ========================================================================%                      
 switch CTRL.testcase        
     case {2,3}
-        case_vortexRings(CTRL, SIM, MESH, ENV)       
+        case_vortexRings(CTRL, SIM, MESH, ENV)
+    case 4
+        case_turbine(CTRL, SIM, MESH, ENV)
     otherwise
         error('[ERROR] testcase not recognized')       
 end

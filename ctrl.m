@@ -1,7 +1,7 @@
 % Needs from Computation/Theory 
 % * Dynamic mesh adaptation to help resolve/preserve key flow structures/processes and bound computational workload 
 % * Adaptative solver algorithms that span the DNS/LES/DES/RANS hierarchy to improve physical fidelity and manage computational workload 
-% * Algorithms to interrogate extremely large computational and experimental data sets, in a way that exploits synergies between predicted and measured data 
+% * Tools to interrogate extremely large computational and experimental data sets, in a way that exploits synergies between predicted and measured data 
 
 % @@@@@@@@@@@@@@@@@@@@@**^^""~~~"^@@^*@*@@**@@@@@@@@@
 % @@@@@@@@@@@@@*^^'"~   , - ' '; ,@@b. '  -e@@@@@@@@@
@@ -24,12 +24,13 @@
 %% =======================================================================%
 % Simulation Parameters
 % ========================================================================%
-% SIM.outputDir           = 'C:\Users\Danny\Desktop\simulation_output\METS-2014\test_vortexRing';
-SIM.outputDir           = '/home/danny/workspace/simulation_output/VortexInCell-test-1';
-SIM.DEBUG_LVL           = 8999;                 % setting a debug level > 0 shows additional output.  If you go over 9000 the profiler is enabled.
+SIM.outputDir           = 'C:\Users\Danny\Desktop\simulation_output\METS-2014\test_VIC-actuator-lines';
+% SIM.outputDir           = '/home/danny/workspace/simulation_output/vic-turbine-1';
+SIM.DEBUG_LVL           = 8999;   	% setting a debug level > 0 shows additional output.  If you go over 9000 the profiler is enabled.
 SIM.writeParticles      = true;
 SIM.writeVelocityField  = true;
 SIM.writeVorticityField = true;
+SIM.writePressureField  = true;
 
 %==========================================================================
 % Input options 
@@ -61,7 +62,7 @@ SIM.runMode_P2M = 'GPU-v2'; % choose: 'CPU-v1', 'CPU-v2',           'GPU-v1', 'G
 %% set time-stepping and output frequency
 SIM.endtime    = 5;
 SIM.fps_output = 10;
-SIM.TSTEPPING  = 'variable';    % choose 'fixed' or 'variable' time stepping algorithms
+SIM.TSTEPPING  = 'fixed';    % choose 'fixed' or 'variable' time stepping algorithms
 SIM.dt         = 0.1;   % time step (only used for fixed step integrators)
 SIM.optionsODE = odeset('AbsTol',           1e-4, ...
                         'RelTol',           1e-4, ...
@@ -82,7 +83,8 @@ SIM.optionsODE = odeset('AbsTol',           1e-4, ...
 % ========================================================================%
 % ENV.kin_visc = 1.46e-5;         % fluid kinematic viscosity (m^2/s) AIR
 ENV.kin_visc = 1.05e-6;      	% fluid kinematic viscosity (m^2/s) WATER
-ENV.velFree  = [0; 0; 0];   	% Free stream velocity (a 3x1 array) [m/s]
+% ENV.velFree  = [0; 0; 0];   	% Free stream velocity (a 3x1 array) [m/s]
+ENV.velFree  = [1; 0; 0];   	% Free stream velocity (a 3x1 array) [m/s]
 
 %% =======================================================================%
 % Particle & Mesh Parameters
@@ -95,7 +97,7 @@ SIM.pad        = 5;       % minimum distance between mesh boundaries and particl
 
 % parent mesh
 MESH.tag      = 'parent mesh';
-MESH.type     = 'colocated';
+MESH.type     = 'colocated';    % staggered meshes are not yet supported
 MESH.xmin     = 2*[-1, -1, -1];
 MESH.xmax     = 2*[ 1,  1,  1];
 MESH.NX       = [24, 24, 24];  % use powers of 2^nx
@@ -104,7 +106,7 @@ MESH.adaptive = false;
 %% =======================================================================%
 % Example Specific Parameters
 % ========================================================================%
-CTRL.testcase = 3;
+CTRL.testcase = 4;
 switch CTRL.testcase
     case 1
         %% Bump function: SPHERICAL SCALAR FIELD
@@ -154,19 +156,21 @@ switch CTRL.testcase
         %    \_/\__,_|_|  |_.__/|_|_| |_|\___|
         % ========================================================================%
         % lifting line simulation
-        CTRL.NUM_BLADES = 3;            % Number of blades
-        CTRL.ROTOR_DIA  = 20;           % Rotor diameter [m]
-        CTRL.HUB_DIA    = 2;            % Hub diameter [m]
-        CTRL.HUB_HT     = 20;           % Hub height [m]
-        CTRL.NUM_SEC    = 10;           % Number of blade cross sections
-        CTRL.ROT_SPD    = 11.5;         % Rotor rotational speed [rpm]
-        CTRL.HH_SPD     = 3.5;          % Free stream flow speed [m/s] at hub height (hub height = z distance to center of the energy extraction area)
-        CTRL.YAW        = 30;
-        CTRL.SHAFT_TILT = 0;
-        CTRL.PRE_CONE   = 0;
-        CTRL.TEETER     = 0;
-        CTRL.BLD_PITCH  = 0;
-        % for now, some other parameter are hard coded in (DOE Ref. Model 1 - Tidal Turbine - But could read input files from WT_Perf/FAST)
+        CTRL.NUM_BLADES  = 3;            % Number of blades
+        CTRL.ROTOR_DIA   = 20;           % Rotor diameter [m]
+        CTRL.HUB_DIA     = 2;            % Hub diameter [m]
+        CTRL.HUB_HT      = 20;           % Hub height [m]
+        CTRL.NUM_SEC     = 30;           % Number of blade cross sections
+        CTRL.ROT_SPD     = 11.5;         % Rotor rotational speed [rpm]
+        CTRL.HH_SPD      = 1.0;          % Free stream flow speed [m/s] at hub height (hub height = z distance to center of the energy extraction area)
+        CTRL.YAW         = 0;
+        CTRL.SHAFT_TILT  = 0;
+        CTRL.PRE_CONE    = 0;
+        CTRL.TEETER      = 0;
+        CTRL.BLD_PITCH   = 0;
+        CTRL.INFLOW_TURB = false;
+        % for now, some other parameter are hard coded in for rotor geometry and controls (DOE Ref. Model 1 - Tidal Turbine - But could read input files from either WT_Perf/FAST/CACTUS ??? can we choose some standard like in OpenMDAO ???)
+
         
 end
 
