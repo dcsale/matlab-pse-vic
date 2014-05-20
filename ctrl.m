@@ -97,10 +97,10 @@ SIM.pad        = 5;       % minimum distance between mesh boundaries and particl
 
 % parent mesh
 MESH.tag      = 'parent mesh';
-MESH.type     = 'colocated';    % staggered meshes are not yet supported
-MESH.xmin     = 2*[-1, -1, -1];
-MESH.xmax     = 2*[ 1,  1,  1];
-MESH.NX       = [24, 24, 24];  % use powers of 2^nx
+MESH.type     = 'colocated';        % staggered meshes are not yet supported
+MESH.xmin     = 30*[-1, -1, -1];
+MESH.xmax     = 30*[ 1,  1,  1];
+MESH.NX       = [64, 64, 64];       % use powers of 2^nx
 MESH.adaptive = false;
 
 %% =======================================================================%
@@ -159,7 +159,7 @@ switch CTRL.testcase
         CTRL.NUM_BLADES  = 3;            % Number of blades
         CTRL.ROTOR_DIA   = 20;           % Rotor diameter [m]
         CTRL.HUB_DIA     = 2;            % Hub diameter [m]
-        CTRL.HUB_HT      = 20;           % Hub height [m]
+        CTRL.HUB_HT      = 0;            % Hub height [m]
         CTRL.NUM_SEC     = 30;           % Number of blade cross sections
         CTRL.ROT_SPD     = 11.5;         % Rotor rotational speed [rpm]
         CTRL.HH_SPD      = 1.0;          % Free stream flow speed [m/s] at hub height (hub height = z distance to center of the energy extraction area)

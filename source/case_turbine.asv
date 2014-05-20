@@ -4,6 +4,9 @@ function case_turbine(CTRL, SIM, MESH, ENV)
 dt_emit = 0.15;     % emit particles every [seconds] -- it's best to choose this value so that the blade tip does not cross more than 1 cell per time step -- or the FAST developers suggest that you choose about 200 time steps per rotor revolution.
 theta   = 0;        % initial value. shaft angular position.
 
+% initialize the mesh
+MESH = init_mesh(SIM, MESH);                
+
 
 %%
 
@@ -31,17 +34,17 @@ ap_old_wake = [];
 % wp_old_wake = [];
 % up_old_wake = [];
 
-if CTRL.INFLOW_TURB
+% if CTRL.INFLOW_TURB
     % xp_inflow     = [];
     % ap_inflow     = [];
     xp_old_inflow = [];
     ap_old_inflow = [];
     % wp_old_inflow = [];
     % up_old_inflow = [];
-end
+% end
 
-% Coord         = cell(CTRL.NUM_BLADES, 1);   % is this pre-allocation incorrect acoording to the below?
-% xp_emit_rotor = cell(CTRL.NUM_BLADES, 1);   % is this pre-allocation incorrect acoording to the below?
+Coord         = cell(CTRL.NUM_BLADES, 1);   % is this pre-allocation incorrect acoording to the below?
+xp_emit_rotor = cell(CTRL.NUM_BLADES, 1);   % is this pre-allocation incorrect acoording to the below?  
 
 while time < SIM.endtime-dt_out
 
@@ -70,26 +73,27 @@ while time < SIM.endtime-dt_out
     d_dt_theta      = shaftSpeed(tspan(2),     theta, CTRL.ROT_SPD);
 
     %% compute the emitted particle positions and strengths
+    circulation  = 1;           % give a unit circulation in the blade coordinate system
+    
     xi = cosspace(0, 1, CTRL.NUM_SEC, 'both'); % blade element spacing
     for n = 1:CTRL.NUM_BLADES
         % a structure array, containing transformations to each blade
-        Coord(n)         = defineCoordSystems(CTRL, azim_blades(n));    % how to pre-allocate this properly?
-%         Coord_tmp        = defineCoordSystems(CTRL, azim_blades(n));
-%         Coord(n)         = Coord_tmp;
-        xp_emit_rotor(n) = interparc(xi, ...
-                                     [Coord(n).Origin.Blade(1) Coord(n).Tip.Blade(1)], ...
-                                     [Coord(n).Origin.Blade(2) Coord(n).Tip.Blade(2)], ...
-                                     [Coord(n).Origin.Blade(3) Coord(n).Tip.Blade(3)], ...
-                                     'linear');                         % how to pre-allocate this properly?
+        Coord{n}         = defineCoordSystems(CTRL, azim_blades(n));
+        % the "bound particles", which are located along the rotating blade reference axis
+        xp_emit_rotor{n} = interparc(xi, ...
+                                     [Coord{n}.Origin.Blade(1) Coord{n}.Tip.Blade(1)], ...
+                                     [Coord{n}.Origin.Blade(2) Coord{n}.Tip.Blade(2)], ...
+                                     [Coord{n}.Origin.Blade(3) Coord{n}.Tip.Blade(3)], ...
+                                     'linear');
     end
     % the rotor particle should be updated every time step,
     % regardless of whether particles were emitted or not
     xp_rotor = [xp_emit_rotor{1}', ...
                 xp_emit_rotor{2}', ...
                 xp_emit_rotor{3}'];
-    ap_rotor = [repmat(Coord(1).Tran.BG * [0; 0; 1], 1, CTRL.NUM_SEC), ...
-                repmat(Coord(2).Tran.BG * [0; 0; 1], 1, CTRL.NUM_SEC), ...
-                repmat(Coord(3).Tran.BG * [0; 0; 1], 1, CTRL.NUM_SEC)];
+    ap_rotor = [repmat(Coord{1}.Tran.BG * [0; 0; 1], circulation, CTRL.NUM_SEC), ...
+                repmat(Coord{2}.Tran.BG * [0; 0; 1], circulation, CTRL.NUM_SEC), ...
+                repmat(Coord{3}.Tran.BG * [0; 0; 1], circulation, CTRL.NUM_SEC)];
 
     %% =======================================================================%
     % create particles subject to vorticity transport equation (VTE)
@@ -99,42 +103,38 @@ while time < SIM.endtime-dt_out
 
         % wake
         xp_emit_wake = xp_rotor;
-        circulation  = 1;           % give a unit circulation in the blade coordinate system
-        ap_emit_wake = [repmat(Coord(1).Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC), ...
-                        repmat(Coord(2).Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC), ...
-                        repmat(Coord(3).Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC)];
+        ap_emit_wake = [repmat(Coord{1}.Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC), ...
+                        repmat(Coord{2}.Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC), ...
+                        repmat(Coord{3}.Tran.BG * [0; 0; circulation], 1, CTRL.NUM_SEC)];
 
-                    
+        % create the turbulent inflow particles if needed            
         if CTRL.INFLOW_TURB
-            
+            % inflow turbulence
+            [my, mz] = meshgrid(linspace(             -CTRL.ROTOR_DIA,               CTRL.ROTOR_DIA, 5), ...
+                                linspace(CTRL.HUB_HT - CTRL.ROTOR_DIA, CTRL.HUB_HT + CTRL.ROTOR_DIA, 5));
+            xp_emit_inflow = [-CTRL.ROTOR_DIA/2.*ones(1,numel(my)); my(:)'; mz(:)'];
+            ap_emit_inflow = rand(3, size(xp_emit_inflow, 2));      % white noise
             
         else
-            
-            
+            xp_emit_inflow = [];
+            ap_emit_inflow = [];
         end
-        
-        
-        % inflow turbulence
-        [my, mz] = meshgrid(linspace(             -CTRL.ROTOR_DIA,               CTRL.ROTOR_DIA, 5), ...
-                            linspace(CTRL.HUB_HT - CTRL.ROTOR_DIA, CTRL.HUB_HT + CTRL.ROTOR_DIA, 5));
-        xp_emit_inflow = [-CTRL.ROTOR_DIA/2.*ones(1,numel(my)); my(:)'; mz(:)'];
-        ap_emit_inflow = rand(3, size(xp_emit_inflow, 2));
 
         % consolidate particles            
         xp        = [xp_old       , xp_emit_wake  , xp_emit_inflow];
         ap        = [ap_old       , ap_emit_wake  , ap_emit_inflow];
         xp_wake   = [xp_old_wake  , xp_emit_wake             ];
-%         ap_wake   = [ap_old_wake  , ap_emit_wake             ];
+        ap_wake   = [ap_old_wake  , ap_emit_wake             ];
         xp_inflow = [xp_old_inflow, xp_emit_inflow           ];
-%         ap_inflow = [ap_old_inflow, ap_emit_inflow           ];
+        ap_inflow = [ap_old_inflow, ap_emit_inflow           ];
     else
         % consolidate particles
         xp        = xp_old;
         ap        = ap_old;
         xp_wake   = xp_old_wake;
-%         ap_wake   = ap_old_wake;
+        ap_wake   = ap_old_wake;
         xp_inflow = xp_old_inflow;
-%         ap_inflow = ap_old_inflow;
+        ap_inflow = ap_old_inflow;
     end
     PART.nPart        = size(xp, 2);
     PART.nPart_wake   = size(xp_wake  , 2);
@@ -143,8 +143,33 @@ while time < SIM.endtime-dt_out
 %             PART.nPart_inflow = size([xp_old_inflow, xp_emit_inflow], 2);
 
 
+    % integrate in time to determine the updated particle positions and updated strengths (particle volumes unchanged since advection is incompressible)
+    x_init = [reshape(xp', SIM.dim*PART.nPart, 1); 
+              reshape(ap', SIM.dim*PART.nPart, 1)];
+    switch SIM.TSTEPPING
+        case 'fixed'
+            tspan = time:SIM.dt:max(time+dt_out, time+SIM.dt);          % fixed time stepping
+%             Y = ode1(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
+            Y = ode2(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
+%             Y = ode4(@ode_RHS, tspan, x_init, CTRL, SIM, MESH, PART, ENV);
+        case 'variable'
+            tspan = [time, time+dt_out];	% variable time stepping
+%             [~, Y] = ode45(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);
+            [~, Y] = ode113(@ode_RHS, tspan, x_init, SIM.optionsODE, CTRL, SIM, MESH, PART, ENV);          
+    end
+    nVars  = 2;
+    tmp    = reshape(Y(end,:)', SIM.dim*PART.nPart, nVars);         % the solution matrix taking the final time, reassign into meaningful variable names
+    xp     = reshape( tmp(:,1),         PART.nPart, SIM.dim)';      % the updated particle positions
+    wp     = reshape( tmp(:,2),         PART.nPart, SIM.dim)';      % the updated particle weights (vorticity)
+    
 
-
+    
+    
+    
+    
+    
+    
+    
     % pass in ALL the particles (inflow, wake, rotor, image), and the points to interpolate to
     % should just preallocate up_rotor here !!! check preallocation in this file to speedup code
     [up_x_rotor, ...

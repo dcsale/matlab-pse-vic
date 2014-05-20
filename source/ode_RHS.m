@@ -5,7 +5,9 @@ function dx_dt = ode_RHS(t, x, CTRL, SIM, MESH, PART, ENV)
 nVars = 2;
 tmp   = reshape(       x, SIM.dim*PART.nPart, nVars);  
 xp    = reshape(tmp(:,1),         PART.nPart, SIM.dim)';    % particle positions
-wp    = reshape(tmp(:,2),         PART.nPart, SIM.dim)';    % particle weights (vorticity)
+% wp    = reshape(tmp(:,2),         PART.nPart, SIM.dim)';    % particle weights (vorticity)
+ap    = reshape(tmp(:,2),         PART.nPart, SIM.dim)';    % particle strengths (circulation)
+wp    = ap ./ PART.vol;
 
 %% Vortex-in-Cell algorithm
 wf         = interp_P2M(SIM, MESH, xp, wp);       	% init a new vorticity field by interpolation from particles (P2M)
@@ -24,4 +26,10 @@ dx_dt = [reshape( up', SIM.dim*PART.nPart, 1);
 %% write diagnostics     
 fprintf(1, '[ode_RHS.m] time = %g\n', t);
 
+    %% make some quick plots for debugging
+    plot_field(wf, MESH, 'vorticity field')
+    % plot_field(uf, MESH, 'velocity field')
+    % plot_particles(xp, wp, MESH, 'particle vorticity')
+    plot_particles(xp, up, MESH, 'particle velocity')
+    
 end % function
