@@ -40,8 +40,8 @@ if CTRL.INFLOW_TURB
     % up_old_inflow = [];
 end
 
-Coord         = cell(CTRL.NUM_BLADES, 1);
-xp_emit_rotor = cell(CTRL.NUM_BLADES, 1);
+% Coord         = cell(CTRL.NUM_BLADES, 1);   % is this pre-allocation incorrect acoording to the below?
+% xp_emit_rotor = cell(CTRL.NUM_BLADES, 1);   % is this pre-allocation incorrect acoording to the below?
 
 while time < SIM.endtime-dt_out
 
@@ -52,10 +52,11 @@ while time < SIM.endtime-dt_out
     theta_init  = theta;
     switch SIM.TSTEPPING
         case 'fixed'
-            tspan = time:SIM.dt:max(time+dt_out, time+SIM.dt);
-            Y     =   ode2(@shaftSpeed, tspan, theta_init, SIM.optionsODE, CTRL.ROT_SPD);
+            tspan  = time:SIM.dt:max(time+dt_out, time+SIM.dt);
+%             Y      =   ode2(@shaftSpeed, tspan, theta_init, SIM.optionsODE, CTRL.ROT_SPD);   % the bug here is that wrong options structure is used - fixed step ODE solvers use different options strucute
+            Y      = ode2(@shaftSpeed, tspan, theta_init, CTRL.ROT_SPD);
         case 'variable'
-            tspan = [time, time+dt_out];
+            tspan  = [time, time+dt_out];
             [~, Y] = ode45(@shaftSpeed, tspan, theta_init, SIM.optionsODE, CTRL.ROT_SPD);
     end
     theta_old   = Y(1); % solution at tspan(1)
@@ -72,12 +73,14 @@ while time < SIM.endtime-dt_out
     xi = cosspace(0, 1, CTRL.NUM_SEC, 'both'); % blade element spacing
     for n = 1:CTRL.NUM_BLADES
         % a structure array, containing transformations to each blade
-        Coord(n)         = defineCoordSystems(CTRL, azim_blades(n));
+        Coord(n)         = defineCoordSystems(CTRL, azim_blades(n));    % how to pre-allocate this properly?
+%         Coord_tmp        = defineCoordSystems(CTRL, azim_blades(n));
+%         Coord(n)         = Coord_tmp;
         xp_emit_rotor(n) = interparc(xi, ...
                                      [Coord(n).Origin.Blade(1) Coord(n).Tip.Blade(1)], ...
                                      [Coord(n).Origin.Blade(2) Coord(n).Tip.Blade(2)], ...
                                      [Coord(n).Origin.Blade(3) Coord(n).Tip.Blade(3)], ...
-                                     'linear');
+                                     'linear');                         % how to pre-allocate this properly?
     end
     % the rotor particle should be updated every time step,
     % regardless of whether particles were emitted or not
@@ -282,37 +285,3 @@ while time < SIM.endtime-dt_out
 end
         
 end
-
-function d_dt_theta = shaftSpeed(t,theta,rpm)
-%Returns d_dt_theta(t) = shaft angular velocity [radians/second]
-rps = rpm * pi/30; % shaft speed [radians/second]
-
-t_trans = 2;
-t_start = 1;
-t_ss    = 10;
-t_up    = t_start + t_trans;
-t_down  = t_up + t_ss;
-
-if     t < t_start
-    % shut-down
-    d_dt_theta = 0;
-    
-elseif t > t_start && t <= t_up
-    % ramp up
-%     d_dt_theta = rps/t_trans * t;
-    d_dt_theta = max(+(rps/t_trans)*(t - t_up) + rps, 0);
-    
-elseif t > t_up && t <= t_down
-    % steady state
-    d_dt_theta = rps;
-    
-else 
-    % ramp down
-    d_dt_theta = max(-(rps/t_trans)*(t - t_down) + rps, 0);
-    
-end
-
-% fprintf(1, '[shaftSpeed] time  = %g [s]\n', t);
-% fprintf(1, '[shaftSpeed] theta = %g [rad]\n', theta);
-
-end % shaftSpeed

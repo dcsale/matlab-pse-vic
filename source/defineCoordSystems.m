@@ -106,7 +106,7 @@ wB =  Rot_GB(:,3);
 OB = OG + BLADE.HUB_DIA/2.*wB;
 TB = OG + BLADE.ROTOR_DIA/2.*wB;
 
-% additional shift of the origin for VAWTs (this is a HACK)
+% additional shift of the origin for VAWTs (this is a HACK) -- what do I mean to hack? well, does the code match the documentation?
 if BLADE.TEETER ~= 0
     OB = OB + BLADE.ROTOR_DIA/2.*vB;
     TB = TB + BLADE.ROTOR_DIA/2.*vB;
